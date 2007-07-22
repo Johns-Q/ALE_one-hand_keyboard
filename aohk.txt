@@ -1,0 +1,482 @@
+/////////////////////////////////////////
+// ALE one-hand keyboard documentation //
+/////////////////////////////////////////
+
+The keys on the keyboard or input device are mapped to key symbols to make
+the documentation general for all devices.
+
+S	is the special command prefix key (SPECIAL)
+U1 - U8	are the user definable keys (USR1,...USR8)	
+0	is the quote key (QUOTE)
+*	is the macro key (MACRO)
+#	is the repeat key (REPEAT)
+1 - 9	are the number keys (NUMBER)
+
+The Keys:
+
+NUMBER 1 - 9
+============
+
+The number keys 1, 2, 3, 4, 5, 6, 7, 8, 9, must be pressed in sequence to 
+generate a character.  When you press 7, than 8, the input 'n' is created.
+Written as 78 = n.  Holding the second number key down, repeats the input
+(auto repeat).
+If you had made an error typing the first number, just wait a second to let it
+forget, this also means that you have only a second to type the two numbers.
+
+Some sequences are mapped to the standard modifiers (Shift, Control, Alt,
+Gui).  When you press 24, the input 'CTRL' pressed is created, to release
+CTRL press 24 or # (repeat) again.  CTRL is automatic release with the next
+non modifier sequence.  24 78 gives the input 'CTRL-N' and CTRL is released.
+The modifier can be combined. 24 84 78 is 'CTRL-ALT-N".  After 10s are all
+modifiers automatic released.  81 different inputs can be entered without
+any extra key.
+
+To generate keyboard input two sequence keys ("1"-"9") must be pressed in
+sequence.  To type "e" the "4"-key must be pressed first, than the "5"-key.  At
+the same time, the "5"-key is pressed the "e" appears.  The "4"-key can be
+released before or after the "5"-key is pressed or released.  The next sequence
+can be started before or after the "5"-key release.  This allows a very fast
+and error free data entry.
+
+QUOTE 0
+=======
+
+The number key 0 is our shift key, to avoid confusion with the real shift
+keys, I call it quote.  When you press 0, nothing happens, you still must
+press two number keys to create an input.  You must press the next key, in
+at least a second.  When you press 7, than 8, the input 'N' is created.
+Written as 078 = N.  Pressing 0 after a 0, is special handled as input of '0'.
+Also some seldom used keys can be reached with quote.
+
+REPEAT #
+========
+
+The enter key (#) is the repeat key.  It repeats the last complete input.
+After you have pressed 78, the # creates the input 'n'.  This more useful
+for more complex key sequences.  24 78 creates CTRL-N, which is used by
+some editors as next line command.  24 78 # is the input "CTRL-N CTRL-N".
+Pressing # after a number key or 0, is handled as special input simulating
+the number key pad.  This gives 10 more input which can be created with only
+two key presses. 4# is the cursor-left-input, 0# is the insert-input.
+Holding down the # key, auto repeats the last sequence and enters the 
+cursor mode.  This can be combined with quote, 04# generates the input key-pad
+4.
+
+Don't forget the repeat key!
+For 'root' type, 15 65 # 75 (r, o, repeat o, t).
+
+MACRO *
+=======
+
+The dot key (*) is the macro key. 218 macros can be stored, press * followed
+my a normal sequence, executes the sequence stored under this combination.
+As default it acts as CTRL key. *78 is CTRL-N.
+
+I plan to use it as word macros, .78 is than fe. "north".
+
+SPECIAL S
+=========
+
+The number lock key (S) is handled as special command key. SS disables the
+one-hand mode.  All keys act now like normal.
+
+U1-U8 User keys (/*-+)
+======================
+
+These keys have no real use.  They can be programmed by the user. The default
+mapping is Left-SHIFT, Left-CONTROL, Left-ALT, Left-GUI  key.  After the quote
+key (0) they are the Right-SHIFT, Right-CONTROL, Right-ALT, Right-GUI key.
+The idea was to use them for modifier mouse-clicks.  51 mouse-click # is slower
+and more to type than keypad-% mouse-click release.
+
+Special combinations
+====================
+
+QUOTE + REPEAT: 0 + #
+---------------------
+Pressing QUOTE (0) and REPEAT (#) together forms a super quote, which is a 
+third level of bindings.
+
+QUOTE + MACRO: 0 + *
+--------------------
+Pressing QUOTE (0) and MACRO (*) together acts as normal Quote+CTRL.
+
+MACRO + REPEAT: * + #
+---------------------
+Pressing MACRO (*) and Repeat (#) together switches to game mode.
+
+1 s pause
+---------
+When you make a 1 s typing pause, all sequence are reset.
+
+10 s pause
+----------
+When you make a 10 s typing pause, all sequence and modifiers are reset.
+
+-----------------------------------------------------------------------------
+Normal mode:
+
+In the normal mode pressing two keys in sequence generates an input. All above
+handles the normal mode.
+
+-----------------------------------------------------------------------------
+Cursor-mode:
+
+Entered by holding down the REPEAT key (#).
+
+After pressing a number key (0-9), the repeat key (#) acts as keypad modifier.
+(4# is cursor left, ...)
+When you keep holding down the repeat key (#), all number keys are now direct
+cursor keys. (4 is cursor left, while holding # down). This saves some key
+presses while scrolling.
+
+-----------------------------------------------------------------------------
+Game-mode:
+
+Entered by pressing the MACRO key (.) and the repeat key (#) together.
+
+All keys are direct mapped to a single key.  It is useful for playing
+games, where it is important you can react fast.  There is no difference
+for the left and rotated mode.
+
+Holding down the quote key (0), while pressing a second key, activates the
+second set.  This way you have 33 direct mapped keys available.  One should
+always mapped to, return to normal mode.
+
+The default mapping is:
+    1  2  3  4  |   5  6  7  8
+    q  w  e  r  |   t  z  u  i
+    a  s  d     |   f  g  h 
+    y  x  c     |   v  b  n
+ CTRL ALT SPACE | NOR TAB ---
+
+#############################################################################
+#############################################################################
+
+ASCII keyboard table:
+-----------------------------------------------------------------------------
+Right hand:			|
+      .---,.---,.---,.---,	|	Special:	NUM
+      |NUM|| % || * || - |	|	Quote:		Cursor-Right 0
+      `---'`---'`---'`---'	|	Repeat:		ENTER
+      .---,.---,.---,.---,	|	Shift:		%
+      | 7 || 8 || 9 ||   |	|	Ctrl:		*
+      `---'`---'`---'| + |	|	Alt:		-
+      .---,.---,.---,|   |	|       GUI:            +
+      | 4 || 5 || 6 ||   |	|	MACRO:		.
+      `---'`---'`---'`---'	|
+      .---,.---,.---,.---,	|	Special is used as commands prefix
+      | 1 || 2 || 3 || E |	|	Quote is our shift key (second set)
+      `---'`---'`---'| N |	|
+.---. .--------,.---,| T |	|	Repeat repeats the last key sequence.
+|-> | |   0    || . || E |	|	Shift/Ctrl/Alt/GUI are just the
+`---' `--------'`---'`---'	|	modifier to be used with mouse.
+-----------------------------------------------------------------------------
+Left hand:			|
+      .---,.---,.---,.---,	|	Special:	NUM
+      |NUM|| % || * || - |	|	Quote:		ENTER
+      `---'`---'`---'`---'	|	Repeat:		Cursor-Right 0
+      .---,.---,.---,.---,	|	Shift:		%
+      | 7 || 8 || 9 ||   |	|	Ctrl:		*
+      `---'`---'`---'| + |	|	Alt:		-
+      .---,.---,.---,|   |	|       GUI:            +
+      | 4 || 5 || 6 ||   |	|	MACRO:		.
+      `---'`---'`---'`---'	|
+      .---,.---,.---,.---,	|	Special is used as commands prefix
+      | 1 || 2 || 3 || E |	|	Quote is our shift key (second set)
+      `---'`---'`---'| N |	|
+.---, .--------,.---,| T |	|	Repeat repeats the last key sequence.
+|-> | |   0    || . || E |	|	Shift/Ctrl/Alt/GUI are just the
+`---' `--------'`---'`---'	|	modifier to be used with mouse.
+-----------------------------------------------------------------------------
+Rotated left hand:		|
+.---..---..---..---..---.	|	Special:	NUM
+|   || 7 || 8 || 9 ||NUM|	|	Quote:		-
+| 0 |`---'`---'`---'`---'	|	Repeat:		ENTER
+|   |.---..---..---..---.	|	Shift:		0
+|   || 4 || 5 || 6 || / |	|	Ctrl:		.
+`---'`---'`---'`---'`---'	|	Alt:		/
+.---..---..---..---..---.	|	GUI:            *
+| . || 1 || 2 || 3 || * |	|	MACRO:		+
+`---'`---'`---'`---'`---'	|	Special is used as commands prefix
+.--------..--------..---.	|	Quote is our shift key (second set)
+| ENTER  ||   +    || - |	|	Repeat repeats the last key sequence.
+`--------'`--------'`---'	|	Shift/Ctrl/Alt/GUI are just the
+				|	modifier to be used with mouse.
+-----------------------------------------------------------------------------
+
+All the following codes are based on the right hand mode:
+        .	= KEYPAD-. => Ctrl-Quote
+	0	= KEYPAD-0 => Quote
+	1 - 9	= KEYPAD-1 ... KEYPAD-9
+	#	= KEYPAD-ENTER => Repeat
+
+54 (SPACE) Press 5 4 right hand mode, press 5 6 left hand mode, press 5 8
+rotated mode (look at above ASCII art).
+
+#############################################################################
+#############################################################################
+
+Mapping of characters to sequence, ASCII mini version:
+
+ !"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\]^_{|}~ `äöüß
+52394463556622290123456789883767846914397174337693147611447558296891891237
+49411717394776370123456789316334222884852266258521585863939825549664737891
+
+SCAM
+HTLT
+TLTA
+
+5285
+1447
+
+-----------------------------------------------------------------------------
+
+Mapping of characters to sequence, sorted by type
+
+    a 42  b 62  c 98  d 18  e 45  f 38    0 00  5 55
+    g 95  h 72  i 12  j 76  k 46  l 32    1 11  6 66
+    m 35  n 78  o 65  p 92  q 31  r 15    2 22  7 77
+    s 48  t 75  u 68  v 16  w 13  x 49    3 33  8 88
+    y 43  z 79  ä 17  ö 28  ü 39  ß 71    4 44  9 99
+
+    ! 29     " 34     # 91    $ 41     % 47     & 61
+    ' 37     ( 53     ) 59    * 64     + 67     , 27
+    - 26     . 23     / 97    : 83     ; 81     < 36
+    = 73     > 63     ? 74    @ 82     [ 58     \ 52
+    ] 85     ^ 25     _ 94    ` 93 082 { 69 058 | 86 052
+    } 96 085 ~ 14 094 § 034   ° 041
+
+    SPACE        54    RETURN        21
+    BACKSPACE    87    TABULATOR     56
+    ESCAPE       89    DELETE        5#
+    ENTER        054   INSERT        0#
+    HOME         7#    END           1#
+    CURSOR-UP    8#    CURSOR-RIGHT  6#
+    CURSOR-DOWN  2#    CURSOR-LEFT   4#
+    PAGE-UP      9#    PAGE-DOWN     3#
+
+    SHIFT-LEFT   51    SHIFT-RIGHT   051
+    CONTROL-LEFT 24    CONTROL-RIGHT 024
+    ALT-LEFT     84    ALT-RIGHT     084
+    GUI-LEFT     57    GUI-RIGHT     057
+
+    NUM-LOCK     014   (below the led)
+    CAPS-LOCK    025   (below the led)
+    SCROLL-LOCK  036   (below the led)
+
+    PRINT	 071
+    PAUSE	 081
+    BREAK	 083
+    SYSRQ	 086
+    MENU	 091
+
+    KEYPAD /     097 047   KEYPAD *      064
+    KEYPAD -     026       KEYPAD +      067
+    KEYPAD ENTER 021       KEYPAD 0      029     (!00 not possible!)
+    KEYPAD 1     01#       KEYPAD 2      02#
+    KEYPAD 3     03#       KEYPAD 4      04#
+    KEYPAD 5     05#       KEYPAD 6      06#
+    KEYPAD 7     07#       KEYPAD 8      08#
+    KEYPAD 9     09#       KEYPAD ,      027 023
+
+    F1	011	(1)
+    F2	022	(2)
+    F3	033	(3)
+    F4	044	(4)
+    F5	055	(5)
+    F6	066	(6)
+    F7	077	(7)
+    F8	088	(8)
+    F9	099	(9)
+    F10 073	(=) (after 9 german keyboard)
+    F11 074	(?) (after = german keyboard)
+    F12 093	(`) (after ? german keyboard)
+
+Notes:
+    @ 82 is also ALTGR-q 0 84 31
+    | 86 is also ALTGR-< 0 84 36
+    ~ 14 is also ALTGR-+ 0 84 67
+
+Special-Commands:
+    QUOTE + REPEAT		Must be pressed together, enter game-mode.
+    SPECIAL + QUOTE		Not needed: use ioctl. Toggle left-right hand
+    SPECIAL + SPECIAL 		Turn off (next SPECIAL re enables)
+    SPECIAL + REPEAT		Toggle use of right-cursor
+    SPECIAL + 1			Toggle only me mode. Normal keyboard disabled
+    SPECIAL + 2			Double timeout
+    SPECIAL + 3			Half timeout
+    SPECIAL + 5			Not needed: use ioctl. Use rotated left hand mode
+    SPECIAL + 6			Game mode
+    SPECIAL + 9			Turn off (re enable not possible)
+    SPECIAL + 4,8,MACRO		Free to assign
+
+-----------------------------------------------------------------------------
+Table sorted by start key: (incomplete)
+----------------------------
+
+.----.----.----.      .----.----.----.      .----.----.----.
+|  F7|   N|   Z|  7   |SBSP|  F8|SESC|  8   |    |    |    |  9
+|7   |n   |z   |      |BSP |8   |ESC |      |/   |c   |9   |
+}----+----+----{      }----+----+----{      }----+----+----{
+| F11|   T|   J|      |RALT|   }|    |      |    |    |    |
+|?   |t   |j   |      |ALT |]   ||   |      |_   |g   |}   |
+}----+----+----+----. }----+----+----+----. }----+----+----+----.
+|PRNT|   H| F10|KP-7| |PAUS|   `|    |KP-8| |    |    |    |KP-9|
+|ß   |h   |=   |HOME| |;   |@   |:   |CUP | |#   |p   |`   |PUP |
+`----~----~----~----' `----~----~----~----' `----~----~----~----'
+
+.----.----.----.      .----.----.----.      .----.----.----.
+|    |    |    |  4   |    |    |    |  5   |    |    |    |  6
+|    |    |    |      |GUI |[   |)   |      |    |    |    |
+}----+----+----{      }----+----+----{      }----+----+----{
+|  F4|    |    |      |    |  F5|    |      |    |    |  F6|
+|4   |    |    |      |SPC |5   |TAB |      |    |    |6   |
+}----+----+----+----. }----+----+----+----. }----+----+----+----.
+|    |    |    |KP-4| |    |    |    |KP-5| |    |    |    |KP-6|
+|    |    |    |CLE | |SHFT|\   |(   |DEL | |    |    |    |CRI |
+`----~----~----~----' `----~----~----~----' `----~----~----~----'
+
+.----.----.----.      .----.----.----.      .----.----.----.
+|   Ä|   D|   Q|  1   |    |    |    |  2   |    |    |    |  3
+|ä   |d   |q   |      |    |    |    |      |    |    |    |
+}----+----+----{      }----+----+----{      }----+----+----{
+| NUM|   R|   V|      |    |    |    |      |    |    |    |
+|~   |r   |v   |      |CTL |^   |-   |      |    |    |    |
+}----+----+----+----. }----+----+----+----. }----+----+----+----.
+|  F1|   I|   W|KP-1| | ENT|  F2|    |KP-2| |    |    |  F3|KP-3|
+|1   |i   |w   |END | |RET |2   |.   |CDN | |    |    |3   |PDN |
+`----~----~----~----' `----~----~----~----' `----~----~----~----'
+
+
+.---------v---------v---------.  .--..-..--.
+| 7  n  z |BSP 8 ESC| /  c  9 |  > 7  8  9 <
+| ?  t  j |ALT ]  | | _  g  } |  > 4  5  6 <
+| ß  h  = | ;  @  : | #  p  ` |  > 1  2  3 <
+}---------+---------+---------{  `--~~-~~--'
+| %  s  x |MTA [  ) | +  u  { |
+| 4  e  k |SPC 5 TAB| *  o  6 |
+| $  a  y |SFT \  ( | &  b  > |
+}---------+---------+---------{
+| ä  d  q | ,  ö  ! | '  f  ü | HOM CUP PUP
+| ~  r  v |CRL ^  - | "  m  < | CLE DEL CRI
+| 1  i  w |RET 2  . | q  l  3 | END CDN PDN
+`---------~---------~---------' INS
+
+.------------v
+| F7   N   Z |
+| 7   n   z  |
+| F11  T   J |
+| ?   t   j  |
+| PRT  H  F10|
+| ß   h   =  |
+}------------+
+
+-----------------------------------------------------------------------------
+Table sorted by code:
+---------------------
+        Normal		Quoted		SuperQuote
+00	0		-not possible-
+01x-09x	Needs an extra key-press
+0#	[INS]		-not possible-
+10	----- RESET -----
+11	1		F1
+12	i		I
+13	w		W
+14	~		NUM-LOCK
+15	r		R
+16	v		V
+17	ä		Ä
+18	d		D
+19	q		Q
+1#	[END]		KEYPAD-1
+20	----- RESET -----
+21	[RET]		KEYPAD-ENTER
+22	2		F2
+23	.		KEYPAD-. (double use)
+24	[CTRL]		Right-[CTRL]
+25	^		CAPS-LOCK
+26	-		KEYPAD--
+27	,		KEYPAD-, (double use)
+28	ö		Ö
+29	!		KEYPAD-0
+2#	[CRSR-DOWN]	KEYPAD-2
+30	----- RESET -----
+31	q		Q
+32	l		L
+33	3		F3
+34	"		§
+35	m		M
+36	<		-free-
+37	'		' (SHIFT-#, double use)
+38	f		F
+39	ü		Ü
+3#	[PAGE-DOWN]	KEYPAD-3
+40	----- RESET -----
+41	$		°
+42	a		A
+43	y		Y
+44	4		F4
+45	e		E
+46	k		K
+47	%		KEYPAD-% (Double use)
+48	s		S
+49	x		X
+4#	[CRSR-LEFT]	KEYPAD-4
+50	----- RESET -----
+51	[SHIFT]		Right-[SHIFT]
+52	\ 		|
+53	(		-free-
+54	[SPC]		SHIFT-[SPC]
+55	5		F5
+56	[TAB]		SHIFT-[TAB]
+57	LEFT-[GUI]	Right-[GUI]
+58	[		}
+59	)		-free-
+5#	[DELETE]	SHIFT-[DEL]
+60	----- RESET -----
+61	&		¤
+62	b		B
+63	>		¢
+64	*		KEYPAD-*
+65	o		O
+66	6		F6
+67	+		KEYPAD-+
+68	u		U
+69	{		-free-
+6#	[CRSR-RIGHT]	KEYPAD-6
+70	----- RESET -----
+71	ß		PRINT
+72	h		H
+73	=		F10
+74	?		F11
+75	t		T
+76	j		J
+77	7		F7
+78	n		N
+79	z		Z
+7#	[HOME]		KEYPAD-7
+80	----- RESET -----
+81	;		PAUSE
+82	@		` (double use)
+83	:		BREAK
+84	LEFT-[ALT]	Right-[ALT]
+85	]		} (double use)
+86	|		SYSRQ
+87	[BSP]		SHIFT-[BSP]
+88	8		F8
+89	[ESC]		SHIFT-[ESC]
+8#	[CRSR-DOWN]	KEYPAD-2
+90	----- RESET -----
+91	#		MENU
+92	p		P
+93	`		F12
+94	_		DEL (0127, double use)
+95	g		G
+96	}		-free-
+97	/		KEYPAD-/
+98	c		C
+99	9		F9
+9#	[PAGE-UP]	KEYPAD-9
+#	Repeat the last sequence
