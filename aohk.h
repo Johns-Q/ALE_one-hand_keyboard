@@ -36,7 +36,7 @@ enum {
     OH_KEY_9,		// keypad 9
     OH_REPEAT,		// keypad ENTER
 
-    OH_WORD,		// keypad .
+    OH_MACRO,		// keypad .
 
     OH_USR_1,		// keypad %
     OH_USR_2,		// keypad *
@@ -51,6 +51,10 @@ enum {
     OH_SPECIAL,		// keypad NUM-LOCK
 };
 
-extern void AOHKFeedKey(int, int);
+extern int Timeout;			// out: Timeout used.
+
 extern void KeyOut(int, int);
 
+extern void AOHKFeedKey(unsigned long, int, int);
+extern void AOHKFeedTimeout(int);
+extern void AOHKSetupConvertTable(const int*);
