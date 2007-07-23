@@ -3,10 +3,10 @@
 |g 95  h 72  i 12  j 76  k 46  l 32    5 55  6 66 7 77 8 88 9 99     . 23  , 27  ; 81  : 83  ! 29  ? 74  |
 |m 35  n 78  o 65  p 92  q 31  r 15  Fx 0yy F10 073 F11 074 F12 093  ( 53  ) 59  < 36  = 73  > 63        |
 |s 48  t 75  u 68  v 16  w 13  x 49                                  * 64  + 67  - 26  / 97  % 47        |
-|y 43  z 79  ä 17  ö 28  ü 39  ß 71   ALE one-hand Keyboard  V1.03   _ 94  # 91  $ 41  @ 82  § 034  ° 041|
+|y 43  z 79  ä 17  ö 28  ü 39  ß 71   ALE one-hand Keyboard  V1.04   _ 94  # 91  $ 41  @ 82  § 034  ° 041|
 |    0+key for uppercase: A 042                                      & 61  [ 58  \ 52  ] 85  ^ 25        |     
 |                                            0 Quote                       { 69  | 86  } 96  ~ 14        |
-|SPC 54  RET 21  BSP 87  TAB 56  ESC 47      * Macro                                                     |
+|SPC 54  RET 21  BSP 87  TAB 56  ESC 89      * Macro                                                     |
 |                                            # Repeat        0+KeyPad  KP-- 026     L-SHFT 51  R-SHFT 051|
 |HOM 7# ^ 8# PG^ 9#  INS 0#   NUM-LOCK  014  #0 Super        KP-0 029  KP-+ 067     L-CTRL 24  R-CTRL 024|
 |<-  4#       -> 6#  DEL 5#   CAPS-LOCK 025  *0 Quote+Macro  KP-% 047  KP-ENT 021   L-ALT  84  R-ALT  084|
