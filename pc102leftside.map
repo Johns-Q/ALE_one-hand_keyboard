@@ -1,0 +1,51 @@
+//
+//	pc102leftside.map	-	ALE one-hand keyboard mapping.
+//
+//	This file is part of ALE one-hand keyboard
+//
+//	This program is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; only version 2 of the License.
+//
+//	This program is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//
+
+// Left hand: German keyboard left side ^ 1 2 3 4		
+// .---,.---,.---,.---,.---,	
+// | S || U2|| U3|| U4|| U5|	
+// `---'`---'`---'`---'`---'	
+// .-----,.---,.---,.---,.---,	
+// |  U1 || 7 || 8 || 9 || U6|	
+// `-----'`---'`---'`---'`---'
+//          .---,.---,.---,.---,
+//          | 4 || 5 || 6 || U7|	
+//          `---'`---'`---'`---'	
+// .----,     .---,.---,.---,.---,	
+// | #  |     | 1 || 2 || 3 || U8|	
+// `----'     `---'`---'`---'`---'
+//              .----,.----------...
+//              |  * ||     0
+//              `----'`----------...
+
+//	Converts input keys to internal symbols
+convert:
+Tab       	-> USR1
+q         	-> 7
+w         	-> 8
+e         	-> 9
+r         	-> USR3
+a         	-> 4
+s         	-> 5
+d         	-> 6
+f         	-> USR4
+LeftShift 	-> #
+z         	-> 1
+x         	-> 2
+c         	-> 3
+LeftAlt   	-> *
+Space     	-> 0
+CapsLock  	-> USR2
+
