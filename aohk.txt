@@ -29,8 +29,8 @@ Gui).  When you press 24, the input 'CTRL' pressed is created, to release
 CTRL press 24 or # (repeat) again.  CTRL is automatic release with the next
 non modifier sequence.  24 78 gives the input 'CTRL-N' and CTRL is released.
 The modifier can be combined. 24 84 78 is 'CTRL-ALT-N".  After 10s are all
-modifiers automatic released.  81 different inputs can be entered without
-any extra key.
+modifiers automatic released.  
+81 different inputs can be entered without any extra key.
 
 To generate keyboard input two sequence keys ("1"-"9") must be pressed in
 sequence.  To type "e" the "4"-key must be pressed first, than the "5"-key.  At
@@ -73,7 +73,7 @@ The dot key (*) is the macro key. 218 macros can be stored, press * followed
 my a normal sequence, executes the sequence stored under this combination.
 As default it acts as CTRL key. *78 is CTRL-N.
 
-I plan to use it as word macros, .78 is than fe. "north".
+I plan to use it as word macros, *78 is than fe. "north".
 
 SPECIAL S
 =========
@@ -96,7 +96,8 @@ Special combinations
 QUOTE + REPEAT: 0 + #
 ---------------------
 Pressing QUOTE (0) and REPEAT (#) together forms a super quote, which is a 
-third level of bindings.
+third level of bindings.  Press first QUOTE and than repeat, without
+releasing quote.
 
 QUOTE + MACRO: 0 + *
 --------------------
@@ -115,6 +116,9 @@ When you make a 1 s typing pause, all sequence are reset.
 When you make a 10 s typing pause, all sequence and modifiers are reset.
 
 -----------------------------------------------------------------------------
+Modes
+=====
+
 Normal mode:
 
 In the normal mode pressing two keys in sequence generates an input. All above
@@ -207,7 +211,7 @@ Rotated left hand:		|
 -----------------------------------------------------------------------------
 
 All the following codes are based on the right hand mode:
-        .	= KEYPAD-. => Ctrl-Quote
+        *	= KEYPAD-. => Macro = Ctrl-Quote
 	0	= KEYPAD-0 => Quote
 	1 - 9	= KEYPAD-1 ... KEYPAD-9
 	#	= KEYPAD-ENTER => Repeat
@@ -257,10 +261,10 @@ Mapping of characters to sequence, sorted by type
     CURSOR-DOWN  2#    CURSOR-LEFT   4#
     PAGE-UP      9#    PAGE-DOWN     3#
 
-    SHIFT-LEFT   51    SHIFT-RIGHT   051
-    CONTROL-LEFT 24    CONTROL-RIGHT 024
-    ALT-LEFT     84    ALT-RIGHT     084
-    GUI-LEFT     57    GUI-RIGHT     057
+    SHIFT-LEFT   51    SHIFT-RIGHT   051   (look at the number pad)
+    CONTROL-LEFT 24    CONTROL-RIGHT 024   (51 24 84 56 are the modifier)
+    ALT-LEFT     84    ALT-RIGHT     084   (should be easy to rember)
+    GUI-LEFT     57    GUI-RIGHT     057   (shift, ctrl, alt, gui)
 
     NUM-LOCK     014   (below the led)
     CAPS-LOCK    025   (below the led)
@@ -279,7 +283,7 @@ Mapping of characters to sequence, sorted by type
     KEYPAD 3     03#       KEYPAD 4      04#
     KEYPAD 5     05#       KEYPAD 6      06#
     KEYPAD 7     07#       KEYPAD 8      08#
-    KEYPAD 9     09#       KEYPAD ,      027 023
+    KEYPAD 9     09#       KEYPAD ,      027 023   (0 than code for . or ,)
 
     F1	011	(1)
     F2	022	(2)
@@ -298,16 +302,19 @@ Notes:
     @ 82 is also ALTGR-q 0 84 31
     | 86 is also ALTGR-< 0 84 36
     ~ 14 is also ALTGR-+ 0 84 67
+    { 69 is also ALTGR-7 0 84 77   (german layout!)
+    ...
 
 Special-Commands:
-    QUOTE + REPEAT		Must be pressed together, enter game-mode.
+    QUOTE + REPEAT		Must be pressed together, is super quote.
+    MACRO + REPEAT		Must be pressed together, enter game-mode.
     SPECIAL + QUOTE		Not needed: use ioctl. Toggle left-right hand
     SPECIAL + SPECIAL 		Turn off (next SPECIAL re enables)
     SPECIAL + REPEAT		Toggle use of right-cursor
     SPECIAL + 1			Toggle only me mode. Normal keyboard disabled
     SPECIAL + 2			Double timeout
     SPECIAL + 3			Half timeout
-    SPECIAL + 5			Not needed: use ioctl. Use rotated left hand mode
+    SPECIAL + 5			Exit program / turn off
     SPECIAL + 6			Game mode
     SPECIAL + 9			Turn off (re enable not possible)
     SPECIAL + 4,8,MACRO		Free to assign
@@ -408,7 +415,7 @@ Table sorted by code:
 33	3		F3
 34	"		§
 35	m		M
-36	<		-free-
+36	<		SCROLL-LOCK
 37	'		' (SHIFT-#, double use)
 38	f		F
 39	ü		Ü
