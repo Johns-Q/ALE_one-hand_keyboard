@@ -51,10 +51,15 @@ enum {
     OH_SPECIAL,		// keypad NUM-LOCK
 };
 
-extern int Timeout;			// out: Timeout used.
+extern int Timeout;			// out: timeout used
+extern int Exit;			// out: exit
 
-extern void KeyOut(int, int);
+extern void KeyOut(int, int);		// out: key code, press
+extern void ShowLED(int , int);		// out: show led
 
 extern void AOHKFeedKey(unsigned long, int, int);
 extern void AOHKFeedTimeout(int);
 extern void AOHKSetupConvertTable(const int*);
+
+extern void AOHKSaveTable(const char*);
+extern void AOHKLoadTable(const char*);
