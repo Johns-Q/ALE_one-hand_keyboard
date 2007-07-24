@@ -40,7 +40,6 @@
 #define PS2_KEYBOARD_ID		0x0001	// System keyboard
 
 #define BELKIN_VENDOR_ID	0x050D	// Belkin's vendor ID
-#define NOSTROMO_N50_ID		0x0805	// n50 USB ID
 #define NOSTROMO_N52_ID		0x0815	// n52 USB ID
 
 //
@@ -48,7 +47,7 @@
 //      End marked with KEY_RESERVED
 //
 static int N52ConvertTable[] = {
-    KEY_LEFTALT, OH_QUOTE,
+    KEY_SPACE, OH_QUOTE,
     KEY_Z, OH_KEY_1,
     KEY_X, OH_KEY_2,
     KEY_C, OH_KEY_3,
@@ -60,7 +59,7 @@ static int N52ConvertTable[] = {
     KEY_E, OH_KEY_9,
     KEY_LEFTSHIFT, OH_REPEAT,
 
-    KEY_SPACE, OH_MACRO,
+    KEY_LEFTALT, OH_MACRO,
 
     KEY_TAB, OH_USR_1,
     KEY_CAPSLOCK, OH_USR_2,
@@ -85,16 +84,40 @@ struct input_device
 } InputDevices[] = {
     {
 //    SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID}, {
-    BELKIN_VENDOR_ID, NOSTROMO_N50_ID, N52ConvertTable}, {
     BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable}, {
     0, 0, NULL}
 };
 
 #define MAX_INPUTS	32
 int InputFds[MAX_INPUTS];		// Inputs
+int InputLEDs[MAX_INPUTS];		// Inputs LED support
 int InputFdsN;				// Number of Inputs
 
 int UInputFd;				// Output
+
+int Timeout = 1000;			// in: timeout used
+int Exit;				// in: exit
+
+//----------------------------------------------------------------------------
+//	Input event
+//----------------------------------------------------------------------------
+
+//
+//	Check if device supports LEDs.
+//
+int EventCheckLEDs(int fd)
+{
+    unsigned char led_bitmask[LED_MAX/8 + 1] = { 0 };
+
+    // Look for a device to control LEDs on 
+    if(ioctl(fd, EVIOCGBIT(EV_LED, sizeof(led_bitmask)), led_bitmask) >= 0) {
+	if(led_bitmask[0]) {
+	    printf("%d: supports led\n", fd);
+	    return 1;
+	} 
+    }
+    return 0;
+}
 
 //
 //      Open input event device.
@@ -137,6 +160,7 @@ int OpenEvent(void)
 			    perror("ioctl(EVIOCGRAB)");
 			}
 			if (InputFdsN < MAX_INPUTS) {
+			    InputLEDs[InputFdsN] = EventCheckLEDs(fd);
 			    InputFds[InputFdsN++] = fd;
 			}
 			AOHKSetupConvertTable(InputDevices[j].ConvertTable);
@@ -160,6 +184,25 @@ int OpenEvent(void)
 
     return 0;
 }
+
+//
+//	Turn LED on/off.
+//
+void EventLEDs(int fd, int num, int state)
+{
+    struct input_event ev;
+
+    ev.type = EV_LED;
+    ev.code = num;
+    ev.value = state;
+    if (write(fd, &ev, sizeof(ev))<0) {
+	perror("write()");
+    }
+}
+
+//----------------------------------------------------------------------------
+//	Uinput
+//----------------------------------------------------------------------------
 
 //
 //      Open uinput device
@@ -257,6 +300,26 @@ void CloseUInput(int fd)
     }
 }
 
+//----------------------------------------------------------------------------
+//	Highlevel
+//----------------------------------------------------------------------------
+
+//
+//	Show LED.
+//
+void ShowLED(int num, int state)
+{
+    int i;
+
+    //	Search device for LEDs.
+    for( i=0; i<InputFdsN; ++i) {
+	if( InputLEDs[i] ) {
+	    // printf("LED: %d\n", InputLEDs[i] );
+	    EventLEDs(InputFds[i], num, state);
+	}
+    }
+}
+
 //
 //      Input read
 //
@@ -275,6 +338,11 @@ void InputRead(int fd)
 	    AOHKFeedKey(ev.time.tv_sec * 1000 + ev.time.tv_usec / 1000,
 		ev.code, ev.value);
 	    break;
+
+	case EV_LED:			// Led event
+	    // Ignore
+	    break;
+
 	case EV_SYN:			// Synchronization events
 	    // Ignore
 	    break;
@@ -300,16 +368,15 @@ void EventLoop(void)
 	fds[i].revents = 0;
     }
 
-    for (;;) {
-	ret = poll(fds, InputFdsN, 1000 * 10);
+    while (!Exit) {
+	ret = poll(fds, InputFdsN, Timeout ? Timeout : -1);
 	if (ret < 0) {			// -1 error
 	    perror("poll()");
-	    return;
+	    continue;
 	}
 	if (!ret) {
-	    printf("Timeout\n");
-	    // FIXME: handle timeouts.
-	    return;
+	    AOHKFeedTimeout(Timeout);
+	    continue;
 	}
 	for (i = 0; i < InputFdsN; ++i) {
 	    if (fds[i].revents) {
@@ -339,6 +406,32 @@ void KeyOut(int key, int pressed)
 }
 
 //
+//	Show firework.
+//
+void Firework(void)
+{
+    static char led_firework[][3] = {
+	{ 0, 0, 0 },
+	{ 1, 0, 0 },
+	{ 0, 1, 0 },
+	{ 0, 0, 1 },
+	{ 0, 1, 0 },
+	{ 1, 0, 0 },
+	{ 0, 0, 0 },
+	{ 1, 1, 1 },
+	{ 0, 0, 0 },
+	{ -1, -1, -1 }, };
+    int i;
+
+    for (i=0; led_firework[i][0]>=0; ++i) {
+    	ShowLED(0, led_firework[i][0]);
+    	ShowLED(1, led_firework[i][1]);
+    	ShowLED(2, led_firework[i][2]);
+	usleep(100000);
+    }
+}
+
+//
 //      Main entry point.
 //
 int main(int argc, char **argv)
@@ -346,16 +439,48 @@ int main(int argc, char **argv)
     int i;
     int ufd;
 
+    printf("ALE one-hand keyboard daemon Version 0.02\n");
     //
     //  Arguments:
     //          -l loading keyboard mapping.
     //          -d wich device
     //
-    printf("Args: ");
-    for (i = 0; i < argc; ++i) {
-	printf("%s", argv[i]);
+    for (;;) {
+        switch (getopt(argc, argv, "s:h?")) {   
+		case EOF:
+		    break;
+		case 's':
+		    // FIXME: hack
+		    AOHKSetupConvertTable(InputDevices[0].ConvertTable);
+		    AOHKSaveTable(optarg);
+		    exit(-1);
+			
+		case 'h':
+		    printf(
+			"Usage: %s [OPTIONs]... [FILEs]...\t"
+			"load specified file(s)\n"
+			"   or: %s [OPTIONs]... -\t\tread mapping from stdin\n"
+			"Options:\n"
+			"-h\tPrint this page\n"
+			"-s file\tSave internal tables\n", argv[0], argv[0]);
+		    exit(0);
+		case ':':
+		    printf("Missing argument for option '%c'\n", optopt);
+		    exit(-1);
+		default:
+		    printf("Unkown option '%c'\n", optopt);
+		    exit(-1);
+	}
+	break;
     }
-    printf("\n");
+
+    //
+    //	Remaining files load as keymap.
+    //
+    for (i = optind; i < argc; ++i) {
+	AOHKLoadTable(argv[i]);
+    }
+    AOHKSaveTable("debug.map");
 
     if (OpenEvent()) {
 	exit(-1);
@@ -364,7 +489,8 @@ int main(int argc, char **argv)
     ufd = OpenUInput();
     if (ufd) {
 	UInputFd = ufd;
-	printf("Wait 10s to leave\n");
+	printf("Press SPECIAL 5 to exit\n");
+	Firework();
 	EventLoop();
 
 	CloseUInput(ufd);
