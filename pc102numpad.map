@@ -1,0 +1,52 @@
+//
+//	pc102leftside.map	-	ALE one-hand keyboard mapping.
+//
+//	This file is part of ALE one-hand keyboard
+//
+//	This program is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; only version 2 of the License.
+//
+//	This program is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//
+
+// Left hand: Number PAD
+//       .---,.---,.---,.---,	|	Special:	NUM
+//       |NUM|| % || * || - |	|	Quote:		ENTER
+//       `---'`---'`---'`---'	|	Repeat:		Cursor-Right 0
+//       .---,.---,.---,.---,	|	Shift:		%
+//       | 7 || 8 || 9 ||   |	|	Ctrl:		*
+//       `---'`---'`---'| + |	|	Alt:		-
+//       .---,.---,.---,|   |	|       GUI:            +
+//       | 4 || 5 || 6 ||   |	|	MACRO:		.
+//       `---'`---'`---'`---'	|
+//       .---,.---,.---,.---,	|	Special is used as commands prefix
+//       | 1 || 2 || 3 || E |	|	Quote is our shift key (second set)
+//       `---'`---'`---'| N |	|
+// .---, .--------,.---,| T |	|	Repeat repeats the last key sequence.
+// |-> | |   0    || . || E |	|	Shift/Ctrl/Alt/GUI are just the
+// `---' `--------'`---'`---'	|	modifier to be used with mouse.
+
+//	Converts input keys to internal symbols
+convert:
+NUMLOCK		-> SPECIAL
+KP_DIVIDE     	-> USR1
+KP_MULTIPLY    	-> USR2
+KP_SUBTRACT   	-> USR3
+KP7         	-> 7
+KP8         	-> 8
+KP9         	-> 9
+KP_ADD         	-> USR4
+KP4         	-> 4
+KP5         	-> 5
+KP6         	-> 6
+KP1         	-> 1
+KP2         	-> 2
+KP3         	-> 3
+KP_ENTER     	-> 0
+Right	 	-> #
+KP0	   	-> #
+KP_PERIOD   	-> *
