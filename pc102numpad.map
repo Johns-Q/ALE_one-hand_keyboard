@@ -1,5 +1,5 @@
 //
-//	pc102leftside.map	-	ALE one-hand keyboard mapping.
+//	pc102numpad.map	-	ALE one-hand keyboard mapping.
 //
 //	This file is part of ALE one-hand keyboard
 //
@@ -12,7 +12,9 @@
 //	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //	GNU General Public License for more details.
 //
+//	$Id$
 
+//-----------------------------------------------------------------------------
 // Left hand: Number PAD
 //       .---,.---,.---,.---,	|	Special:	NUM
 //       |NUM|| % || * || - |	|	Quote:		ENTER
@@ -29,6 +31,7 @@
 // .---, .--------,.---,| T |	|	Repeat repeats the last key sequence.
 // |-> | |   0    || . || E |	|	Shift/Ctrl/Alt/GUI are just the
 // `---' `--------'`---'`---'	|	modifier to be used with mouse.
+//-----------------------------------------------------------------------------
 
 //	Converts input keys to internal symbols
 convert:
