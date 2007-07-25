@@ -104,7 +104,7 @@ mapping:
 76	-> j
 77	-> 7
 78	-> n
-79	-> z
+79	-> y
 80	-> RESET
 81	-> LeftShift ,
 82	-> AltGr q
@@ -214,7 +214,7 @@ USR8	-> QUAL RightMeta
 076	-> LeftShift j
 077	-> F7
 078	-> LeftShift n
-079	-> LeftShift z
+079	-> LeftShift y
 080	-> RESET
 081	-> Pause
 082	-> LeftShift =
@@ -324,7 +324,7 @@ USR8	-> QUAL RightMeta
 0#76	-> LeftAlt j
 0#77	-> LeftAlt 7
 0#78	-> LeftAlt n
-0#79	-> LeftAlt z
+0#79	-> LeftAlt y
 0#80	-> RESET
 0#81	-> LeftShift LeftAlt ,
 0#82	-> AltGr q
@@ -395,7 +395,7 @@ USR8	-> QUAL RightMeta
 0*#5	-> g
 0*#6	-> h
 0*#7	-> t
-0*#8	-> z
+0*#8	-> y
 0*#9	-> u
 0*##	-> RESET
 0*#*	-> Tab
@@ -479,7 +479,7 @@ macro:
 *76	-> LeftCtrl j
 *77	-> LeftCtrl 7
 *78	-> LeftCtrl n
-*79	-> LeftCtrl z
+*79	-> LeftCtrl y
 *80	-> RESET
 *81	-> LeftShift LeftCtrl ,
 *82	-> LeftCtrl AltGr q
