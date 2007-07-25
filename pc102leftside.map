@@ -32,20 +32,25 @@
 
 //	Converts input keys to internal symbols
 convert:
+1         	-> USR2
+2         	-> USR3
+3         	-> USR4
+4         	-> USR5
 Tab       	-> USR1
 q         	-> 7
 w         	-> 8
 e         	-> 9
-r         	-> USR3
+r         	-> USR6
 a         	-> 4
 s         	-> 5
 d         	-> 6
-f         	-> USR4
+f         	-> USR7
+`         	-> SPECIAL
 LeftShift 	-> #
+LeftCtrl   	-> #
 z         	-> 1
 x         	-> 2
 c         	-> 3
+v         	-> USR8
 LeftAlt   	-> *
 Space     	-> 0
-CapsLock  	-> USR2
-
