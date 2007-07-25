@@ -51,7 +51,7 @@ enum
     OHGameMode,				// gamemode: key = key
     OHSpecial,				// have seen the special key
     OHSoftOff,				// turned off
-    OHTotalOff				// 100% turned off
+    OHHardOff				// 100% turned off
 };
 
 typedef struct _oh_key_ OHKey;
@@ -163,7 +163,7 @@ static OHKey AOHKTable[10*10+1+8] = {
 /*2->2*/ { 0,		0x03	},	// 2
 /*2->3*/ { 0,		0x34	},	// .
 /*2->4*/ { QUAL,	Q_CTRL_L },	// Control_L
-/*2->5*/ { 0,		0x29	},	// ^
+/*2->5*/ { 0,		KEY_GRAVE	},	// ^
 /*2->6*/ { 0,		0x35	},	// -
 /*2->7*/ { 0,		0x33	},	// ,
 /*2->8*/ { 0,		0x27	},	// ö
@@ -276,7 +276,7 @@ static OHKey AOHKQuoteTable[10*10+1+8] = {
 /*0->1->1*/ { 0,	0x3B	},	// F1
 /*0->1->2*/ { SHIFT,	0x17	},	// I
 /*0->1->3*/ { SHIFT,	0x11	},	// W
-/*0->1->4*/ { 0,	0x45	},	// NUM-LOCK
+/*0->1->4*/ { 0,	KEY_NUMLOCK	},	// NUM-LOCK
 /*0->1->5*/ { SHIFT,	0x13	},	// R
 /*0->1->6*/ { SHIFT,	0x2F	},	// V
 /*0->1->7*/ { SHIFT,	0x28	},	// Ä
@@ -303,7 +303,7 @@ static OHKey AOHKQuoteTable[10*10+1+8] = {
 /*0->3->8*/ { SHIFT,	0x21	},	// F
 /*0->3->9*/ { SHIFT,	0x1A	},	// Ü
 /*0->4->0*/ { RESET,	0	},	// RESET
-/*0->4->1*/ { SHIFT,	0x29	},	// °
+/*0->4->1*/ { SHIFT,	KEY_GRAVE	},	// °
 /*0->4->2*/ { SHIFT,	0x1E	},	// A
 /*0->4->3*/ { SHIFT,	KEY_Z	},	// Y
 /*0->4->4*/ { 0,	0x3E	},	// F4
@@ -411,7 +411,7 @@ static OHKey AOHKSuperTable[10*10+1+8] = {
 /*2->2*/ { ALT,		0x03	},	// 2
 /*2->3*/ { ALT,		0x34	},	// .
 /*2->4*/ { QUAL,	Q_CTRL_L },	// Control_L
-/*2->5*/ { ALT,		0x29	},	// ^
+/*2->5*/ { ALT,		KEY_GRAVE	},	// ^
 /*2->6*/ { ALT,		0x35	},	// -
 /*2->7*/ { ALT,		0x33	},	// ,
 /*2->8*/ { ALT,		0x27	},	// ö
@@ -606,7 +606,7 @@ static unsigned char* AOHKMacroTable[10*10+1+8] = {
 /**->2->2*/ (unsigned char[]){ CTL,		0x03	},	// 2
 /**->2->3*/ (unsigned char[]){ CTL,		0x34	},	// .
 /**->2->4*/ (unsigned char[]){ QUAL,	Q_CTRL_L },	// Control_L
-/**->2->5*/ (unsigned char[]){ CTL,		0x29	},	// ^
+/**->2->5*/ (unsigned char[]){ CTL,		KEY_GRAVE	},	// ^
 /**->2->6*/ (unsigned char[]){ CTL,		0x35	},	// -
 /**->2->7*/ (unsigned char[]){ CTL,		0x33	},	// ,
 /**->2->8*/ (unsigned char[]){ CTL,		0x27	},	// ö
@@ -1409,7 +1409,7 @@ static void AOHKSpecialMode(int key)
 	return;
     }
     if (key == OH_KEY_9) {		// turn it off
-	AOHKState = OHTotalOff;
+	AOHKState = OHHardOff;
 	Debug(4, "one-hand: Turned off.\n");
 	return;
     }
@@ -1426,7 +1426,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
     //
     //  Completly turned off
     //
-    if (AOHKState == OHTotalOff) {
+    if (AOHKState == OHHardOff) {
 	KeyOut(inkey, down);
 	return;
     }
@@ -1441,6 +1441,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
     if (AOHKState == OHSoftOff) {
 	//
 	//  Next special key reenables us
+	//  down! otherwise we get the release of the disable press
 	//
 	if (down && key == OH_SPECIAL) {
 	    Debug(4, "Reenable.\n");
@@ -1583,7 +1584,8 @@ void AOHKFeedTimeout(int which)
     //
     //  Timeout -> reset to intial state
     //
-    if (AOHKState != OHGameMode) {
+    if (AOHKState != OHGameMode && AOHKState!= OHSoftOff
+	    && AOHKState != OHHardOff) {
 	// Long time: total reset
 	if (which >= AOHKTimeout * 10) {
 	    Debug(1, "Timeout long %d\n", which);
@@ -1721,7 +1723,7 @@ static const char* AOHKKey2String[128] = {
     "e",
     "r",
     "t",
-    "z",
+    "y",
     "u",
     "i",
     "o",
