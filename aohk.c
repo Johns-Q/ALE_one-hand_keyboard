@@ -1845,7 +1845,17 @@ static const struct {
     const char* Name;
     unsigned char Key;
 } AOHKKeyAlias[] = {
-    {"AltGr",	KEY_RIGHTALT }
+    {"AltGr",	KEY_RIGHTALT },
+    {"KP0",	KEY_KP0 },
+    {"KP1",	KEY_KP1 },
+    {"KP2",	KEY_KP2 },
+    {"KP3",	KEY_KP3 },
+    {"KP4",	KEY_KP4 },
+    {"KP5",	KEY_KP5 },
+    {"KP6",	KEY_KP6 },
+    {"KP7",	KEY_KP7 },
+    {"KP8",	KEY_KP8 },
+    {"KP9",	KEY_KP9 },
 };
 
 //
@@ -2097,7 +2107,7 @@ static int AOHKString2Key(const char *line, size_t l)
     //
     for (i = 0; i < sizeof(AOHKKeyAlias) / sizeof(*AOHKKeyAlias); ++i) {
 	if (l == strlen(AOHKKeyAlias[i].Name)
-	    && !strncmp(line, AOHKKeyAlias[i].Name, l)) {
+	    && !strncasecmp(line, AOHKKeyAlias[i].Name, l)) {
 	    return AOHKKeyAlias[i].Key;
 	}
     }
@@ -2106,7 +2116,7 @@ static int AOHKString2Key(const char *line, size_t l)
     //
     for (i = 0; i < sizeof(AOHKKey2String) / sizeof(*AOHKKey2String); ++i) {
 	if (l == strlen(AOHKKey2String[i])
-	    && !strncmp(line, AOHKKey2String[i], l)) {
+	    && !strncasecmp(line, AOHKKey2String[i], l)) {
 	    return i;
 	}
     }
@@ -2123,7 +2133,7 @@ static int AOHKString2Internal(const char *line, size_t l)
     for (i = 0; i < sizeof(AOHKInternal2String) / sizeof(*AOHKInternal2String);
 	++i) {
 	if (l == strlen(AOHKInternal2String[i])
-	    && !strncmp(line, AOHKInternal2String[i], l)) {
+	    && !strncasecmp(line, AOHKInternal2String[i], l)) {
 	    return i;
 	}
     }
@@ -2148,7 +2158,7 @@ static void AOHKParseConvert(char *line)
     l = s - line;
     key = AOHKString2Key(line, l);
     if (key == KEY_RESERVED) {		// Still not found giving up.
-	Debug(5, "Key '%s' not found\n", line);
+	Debug(5, "Key '%.*s' not found\n", l, line);
 	return;
     }
     //
@@ -2182,7 +2192,7 @@ static void AOHKParseConvert(char *line)
     //
     internal = AOHKString2Internal(line, l);
     if (internal == -1) {
-	Debug(5, "Key '%s' not found\n", line);
+	Debug(5, "Key '%.*s' not found\n",l, line);
 	return;
     }
 
@@ -2268,7 +2278,7 @@ static void AOHKParseOutput(char *line, OHKey * out)
     } else if (l) {
 	i = AOHKString2Key(line, l);
 	if (i == KEY_RESERVED) {	// Still not found giving up.
-	    Debug(5, "Key '%s' not found\n", line);
+	    Debug(5, "Key '%.*s' not found\n",l, line);
 	    return;
 	}
 	// Look if its a modifier
