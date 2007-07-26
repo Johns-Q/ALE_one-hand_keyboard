@@ -1367,8 +1367,8 @@ static void AOHKSpecialMode(int key)
 	    KeyOut(KEY_DOT, 0);
 	    KeyOut(KEY_0, 1);
 	    KeyOut(KEY_0, 0);
-	    KeyOut(KEY_2, 1);
-	    KeyOut(KEY_2, 0);
+	    KeyOut(KEY_3, 1);
+	    KeyOut(KEY_3, 0);
 	    return;
 
 	case OH_KEY_5:			// exit
