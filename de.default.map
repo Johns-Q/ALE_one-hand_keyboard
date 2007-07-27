@@ -36,7 +36,7 @@ CapsLock  	-> USR2
 //	Mapping of internal symbol sequences to keys
 mapping:
 //	normal
-10	-> RESET
+10	-> QUOTE
 11	-> 1
 12	-> i
 13	-> w
@@ -45,8 +45,8 @@ mapping:
 16	-> v
 17	-> '
 18	-> d
-19	-> q
-20	-> RESET
+19	-> RESET
+20	-> QUOTE
 21	-> Enter
 22	-> 2
 23	-> .
@@ -56,7 +56,7 @@ mapping:
 27	-> ,
 28	-> ;
 29	-> LeftShift 1
-30	-> RESET
+30	-> QUOTE
 31	-> q
 32	-> l
 33	-> 3
@@ -66,7 +66,7 @@ mapping:
 37	-> =
 38	-> f
 39	-> [
-40	-> RESET
+40	-> QUOTE
 41	-> LeftShift 4
 42	-> a
 43	-> z
@@ -76,7 +76,7 @@ mapping:
 47	-> LeftShift 5
 48	-> s
 49	-> x
-50	-> RESET
+50	-> QUOTE
 51	-> QUAL LeftShift 
 52	-> AltGr -
 53	-> LeftShift 8
@@ -86,7 +86,7 @@ mapping:
 57	-> QUAL LeftMeta 
 58	-> AltGr 8
 59	-> LeftShift 9
-60	-> RESET
+60	-> QUOTE
 61	-> LeftShift 6
 62	-> b
 63	-> LeftShift <
@@ -96,7 +96,7 @@ mapping:
 67	-> ]
 68	-> u
 69	-> AltGr 7
-70	-> RESET
+70	-> QUOTE
 71	-> -
 72	-> h
 73	-> LeftShift 0
@@ -106,7 +106,7 @@ mapping:
 77	-> 7
 78	-> n
 79	-> y
-80	-> RESET
+80	-> QUOTE
 81	-> LeftShift ,
 82	-> AltGr q
 83	-> LeftShift .
@@ -116,7 +116,7 @@ mapping:
 87	-> BackSpace
 88	-> 8
 89	-> ESC
-90	-> RESET
+90	-> QUOTE
 91	-> \
 92	-> p
 93	-> LeftShift =
@@ -155,7 +155,7 @@ USR8	-> QUAL RightMeta
 016	-> LeftShift v
 017	-> LeftShift '
 018	-> LeftShift d
-019	-> LeftShift q
+019	-> RESET
 020	-> RESET
 021	-> KP_Enter
 022	-> F2
@@ -219,10 +219,10 @@ USR8	-> QUAL RightMeta
 080	-> RESET
 081	-> Pause
 082	-> LeftShift =
-083	-> Linefeed
+083	-> LeftCtrl Pause
 084	-> QUAL RightAlt 
 085	-> AltGr 0
-086	-> SYSRQ
+086	-> LeftAlt SYSRQ
 087	-> LeftShift BackSpace
 088	-> F8
 089	-> LeftShift ESC
@@ -230,7 +230,7 @@ USR8	-> QUAL RightMeta
 091	-> Menu
 092	-> LeftShift p
 093	-> F12
-094	-> BackSpace
+094	-> RESERVED
 095	-> LeftShift g
 096	-> SPECIAL
 097	-> KP_Divide
@@ -241,7 +241,7 @@ USR8	-> QUAL RightMeta
 02#	-> KP_2
 03#	-> KP_3
 04#	-> KP_4
-05#	-> KP_Period
+05#	-> KP_5
 06#	-> KP_6
 07#	-> KP_7
 08#	-> KP_8
@@ -256,17 +256,17 @@ USR8	-> QUAL RightMeta
 0USR7	-> QUAL LeftAlt 
 0USR8	-> QUAL LeftMeta 
 //	super 0# key prefix
-0#10	-> RESET
+0#10	-> QUOTE
 0#11	-> LeftAlt 1
 0#12	-> LeftAlt i
 0#13	-> LeftAlt w
-0#14	-> AltGr ]
+0#14	-> LeftAlt AltGr ]
 0#15	-> LeftAlt r
 0#16	-> LeftAlt v
 0#17	-> LeftAlt '
 0#18	-> LeftAlt d
-0#19	-> LeftAlt q
-0#20	-> RESET
+0#19	-> RESET
+0#20	-> QUOTE
 0#21	-> LeftAlt Enter
 0#22	-> LeftAlt 2
 0#23	-> LeftAlt .
@@ -276,7 +276,7 @@ USR8	-> QUAL RightMeta
 0#27	-> LeftAlt ,
 0#28	-> LeftAlt ;
 0#29	-> LeftShift LeftAlt 1
-0#30	-> RESET
+0#30	-> QUOTE
 0#31	-> LeftAlt q
 0#32	-> LeftAlt l
 0#33	-> LeftAlt 3
@@ -286,7 +286,7 @@ USR8	-> QUAL RightMeta
 0#37	-> LeftAlt =
 0#38	-> LeftAlt f
 0#39	-> LeftAlt [
-0#40	-> RESET
+0#40	-> QUOTE
 0#41	-> LeftShift LeftAlt 4
 0#42	-> LeftAlt a
 0#43	-> LeftAlt z
@@ -296,17 +296,17 @@ USR8	-> QUAL RightMeta
 0#47	-> LeftShift LeftAlt 5
 0#48	-> LeftAlt s
 0#49	-> LeftAlt x
-0#50	-> RESET
+0#50	-> QUOTE
 0#51	-> QUAL LeftShift 
-0#52	-> AltGr -
+0#52	-> LeftAlt AltGr -
 0#53	-> LeftShift LeftAlt 8
 0#54	-> LeftAlt Space
 0#55	-> LeftAlt 5
 0#56	-> LeftAlt Tab
 0#57	-> QUAL LeftMeta 
-0#58	-> AltGr 8
+0#58	-> LeftAlt AltGr 8
 0#59	-> LeftShift LeftAlt 9
-0#60	-> RESET
+0#60	-> QUOTE
 0#61	-> LeftShift LeftAlt 6
 0#62	-> LeftAlt b
 0#63	-> LeftShift LeftAlt <
@@ -315,8 +315,8 @@ USR8	-> QUAL RightMeta
 0#66	-> LeftAlt 6
 0#67	-> LeftAlt ]
 0#68	-> LeftAlt u
-0#69	-> AltGr 7
-0#70	-> RESET
+0#69	-> LeftAlt AltGr 7
+0#70	-> QUOTE
 0#71	-> LeftAlt -
 0#72	-> LeftAlt h
 0#73	-> LeftShift LeftAlt 0
@@ -326,23 +326,23 @@ USR8	-> QUAL RightMeta
 0#77	-> LeftAlt 7
 0#78	-> LeftAlt n
 0#79	-> LeftAlt y
-0#80	-> RESET
+0#80	-> QUOTE
 0#81	-> LeftShift LeftAlt ,
-0#82	-> AltGr q
+0#82	-> LeftAlt AltGr q
 0#83	-> LeftShift LeftAlt .
 0#84	-> QUAL LeftAlt 
-0#85	-> AltGr 9
-0#86	-> AltGr <
+0#85	-> LeftAlt AltGr 9
+0#86	-> LeftAlt AltGr <
 0#87	-> LeftAlt BackSpace
 0#88	-> LeftAlt 8
 0#89	-> LeftAlt ESC
-0#90	-> RESET
+0#90	-> QUOTE
 0#91	-> LeftAlt \
 0#92	-> LeftAlt p
 0#93	-> LeftShift LeftAlt =
 0#94	-> LeftShift LeftAlt /
 0#95	-> LeftAlt g
-0#96	-> AltGr 0
+0#96	-> LeftAlt AltGr 0
 0#97	-> LeftShift LeftAlt 7
 0#98	-> LeftAlt c
 0#99	-> LeftAlt 9
@@ -411,7 +411,7 @@ USR8	-> QUAL RightMeta
 0*#SPECIAL	-> 5
 //	# Macro strings * key prefix
 macro:
-*10	-> RESET
+*10	-> QUOTE
 *11	-> LeftCtrl 1
 *12	-> LeftCtrl i
 *13	-> LeftCtrl w
@@ -420,8 +420,8 @@ macro:
 *16	-> LeftCtrl v
 *17	-> LeftCtrl '
 *18	-> LeftCtrl d
-*19	-> LeftCtrl q
-*20	-> RESET
+*19	-> RESET
+*20	-> QUOTE
 *21	-> LeftCtrl Enter
 *22	-> LeftCtrl 2
 *23	-> LeftCtrl .
@@ -431,7 +431,7 @@ macro:
 *27	-> LeftCtrl ,
 *28	-> LeftCtrl ;
 *29	-> LeftShift LeftCtrl 1
-*30	-> RESET
+*30	-> QUOTE
 *31	-> LeftCtrl q
 *32	-> LeftCtrl l
 *33	-> LeftCtrl 3
@@ -441,7 +441,7 @@ macro:
 *37	-> LeftCtrl =
 *38	-> LeftCtrl f
 *39	-> LeftCtrl [
-*40	-> RESET
+*40	-> QUOTE
 *41	-> LeftShift LeftCtrl 4
 *42	-> LeftCtrl a
 *43	-> LeftCtrl z
@@ -451,7 +451,7 @@ macro:
 *47	-> LeftShift LeftCtrl 5
 *48	-> LeftCtrl s
 *49	-> LeftCtrl x
-*50	-> RESET
+*50	-> QUOTE
 *51	-> QUAL LeftShift 
 *52	-> LeftCtrl AltGr -
 *53	-> LeftShift LeftCtrl 8
@@ -461,7 +461,7 @@ macro:
 *57	-> QUAL LeftMeta 
 *58	-> LeftCtrl AltGr 8
 *59	-> LeftShift LeftCtrl 9
-*60	-> RESET
+*60	-> QUOTE
 *61	-> LeftShift LeftCtrl 6
 *62	-> LeftCtrl b
 *63	-> LeftShift LeftCtrl <
@@ -471,7 +471,7 @@ macro:
 *67	-> LeftCtrl ]
 *68	-> LeftCtrl u
 *69	-> LeftCtrl AltGr 7
-*70	-> RESET
+*70	-> QUOTE
 *71	-> LeftCtrl -
 *72	-> LeftCtrl h
 *73	-> LeftShift LeftCtrl 0
@@ -481,7 +481,7 @@ macro:
 *77	-> LeftCtrl 7
 *78	-> LeftCtrl n
 *79	-> LeftCtrl y
-*80	-> RESET
+*80	-> QUOTE
 *81	-> LeftShift LeftCtrl ,
 *82	-> LeftCtrl AltGr q
 *83	-> LeftShift LeftCtrl .
@@ -491,7 +491,7 @@ macro:
 *87	-> LeftCtrl BackSpace
 *88	-> LeftCtrl 8
 *89	-> LeftCtrl ESC
-*90	-> RESET
+*90	-> QUOTE
 *91	-> LeftCtrl \
 *92	-> LeftCtrl p
 *93	-> LeftShift LeftCtrl =
