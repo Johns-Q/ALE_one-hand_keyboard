@@ -1,0 +1,522 @@
+//
+//	us.default.map	-	ALE one-hand keyboard mapping.
+//
+//	This file is part of ALE one-hand keyboard
+//
+//	This program is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; only version 2 of the License.
+//
+//	This program is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//
+//	$Id$
+
+//	Converts input keys to internal symbols
+convert:
+Tab       	-> USR1
+q         	-> 7
+w         	-> 8
+e         	-> 9
+r         	-> USR3
+a         	-> 4
+s         	-> 5
+d         	-> 6
+f         	-> USR4
+LeftShift 	-> #
+z         	-> 1
+x         	-> 2
+c         	-> 3
+LeftAlt   	-> *
+Space     	-> 0
+CapsLock  	-> USR2
+
+//	Mapping of internal symbol sequences to keys
+mapping:
+//	normal
+10	-> QUOTE
+11	-> 1
+12	-> i
+13	-> w
+14	-> LeftShift `
+15	-> r
+16	-> v
+17	-> a
+18	-> d
+19	-> RESET
+20	-> QUOTE
+21	-> Enter
+22	-> 2
+23	-> .
+24	-> QUAL LeftCtrl 
+25	-> LeftShift 6
+26	-> -
+27	-> ,
+28	-> o
+29	-> LeftShift 1
+30	-> QUOTE
+31	-> q
+32	-> l
+33	-> 3
+34	-> LeftShift '
+35	-> m
+36	-> LeftShift ,
+37	-> '
+38	-> f
+39	-> u
+40	-> QUOTE
+41	-> LeftShift 4
+42	-> a
+43	-> y
+44	-> 4
+45	-> e
+46	-> k
+47	-> LeftShift 5
+48	-> s
+49	-> x
+50	-> QUOTE
+51	-> QUAL LeftShift 
+52	-> \
+53	-> LeftShift 9
+54	-> Space
+55	-> 5
+56	-> Tab
+57	-> QUAL LeftMeta 
+58	-> [
+59	-> LeftShift 0
+60	-> QUOTE
+61	-> LeftShift 7
+62	-> b
+63	-> LeftShift .
+64	-> LeftShift 8
+65	-> o
+66	-> 6
+67	-> LeftShift =
+68	-> u
+69	-> LeftShift [
+70	-> QUOTE
+71	-> s
+72	-> h
+73	-> =
+74	-> LeftShift /
+75	-> t
+76	-> j
+77	-> 7
+78	-> n
+79	-> z
+80	-> QUOTE
+81	-> ;
+82	-> LeftShift 2
+83	-> LeftShift ;
+84	-> QUAL LeftAlt 
+85	-> ]
+86	-> LeftShift \
+87	-> BackSpace
+88	-> 8
+89	-> ESC
+90	-> QUOTE
+91	-> LeftShift 3
+92	-> p
+93	-> `
+94	-> LeftShift -
+95	-> g
+96	-> LeftShift ]
+97	-> /
+98	-> c
+99	-> 9
+0#	-> Insert
+1#	-> End
+2#	-> Down
+3#	-> PageDown
+4#	-> Left
+5#	-> Delete
+6#	-> Right
+7#	-> Home
+8#	-> Up
+9#	-> PageUp
+00	-> 0
+USR1	-> QUAL LeftShift 
+USR2	-> QUAL LeftCtrl 
+USR3	-> QUAL LeftAlt 
+USR4	-> QUAL LeftMeta 
+USR5	-> QUAL RightShift 
+USR6	-> QUAL RightCtrl 
+USR7	-> QUAL RightAlt 
+USR8	-> QUAL RightMeta 
+//	quote 0 key prefix
+010	-> RESET
+011	-> F1
+012	-> LeftShift i
+013	-> LeftShift w
+014	-> NumLock
+015	-> LeftShift r
+016	-> LeftShift v
+017	-> LeftShift a
+018	-> LeftShift d
+019	-> RESET
+020	-> RESET
+021	-> KP_Enter
+022	-> F2
+023	-> KP_Period
+024	-> QUAL RightCtrl 
+025	-> CapsLock
+026	-> KP_Subtract
+027	-> KP_Period
+028	-> LeftShift o
+029	-> KP_0
+030	-> RESET
+031	-> LeftShift q
+032	-> LeftShift l
+033	-> F3
+034	-> 8
+035	-> LeftShift m
+036	-> ScrollLock
+037	-> '
+038	-> LeftShift f
+039	-> LeftShift u
+040	-> RESET
+041	-> 0
+042	-> LeftShift a
+043	-> LeftShift y
+044	-> F4
+045	-> LeftShift e
+046	-> LeftShift k
+047	-> KP_Divide
+048	-> LeftShift s
+049	-> LeftShift x
+050	-> RESET
+051	-> QUAL RightShift 
+052	-> LeftShift \
+053	-> LeftShift 9
+054	-> LeftShift Space
+055	-> F5
+056	-> LeftShift Tab
+057	-> QUAL RightMeta 
+058	-> LeftShift [
+059	-> LeftShift 0
+060	-> RESET
+061	-> LeftShift e
+062	-> LeftShift b
+063	-> LeftShift c
+064	-> KP_Multiply
+065	-> LeftShift o
+066	-> F6
+067	-> KP_Add
+068	-> LeftShift u
+069	-> LeftShift ]
+070	-> RESET
+071	-> SYSRQ
+072	-> LeftShift h
+073	-> F10
+074	-> F11
+075	-> LeftShift t
+076	-> LeftShift j
+077	-> F7
+078	-> LeftShift n
+079	-> LeftShift z
+080	-> RESET
+081	-> Pause
+082	-> `
+083	-> LeftCtrl Pause
+084	-> QUAL RightAlt 
+085	-> LeftShift ]
+086	-> LeftAlt SYSRQ
+087	-> LeftShift BackSpace
+088	-> F8
+089	-> LeftShift ESC
+090	-> RESET
+091	-> Menu
+092	-> LeftShift p
+093	-> F12
+094	-> RESERVED
+095	-> LeftShift g
+096	-> SPECIAL
+097	-> KP_Divide
+098	-> LeftShift c
+099	-> F9
+00#	-> RESERVED
+01#	-> KP_1
+02#	-> KP_2
+03#	-> KP_3
+04#	-> KP_4
+05#	-> KP_5
+06#	-> KP_6
+07#	-> KP_7
+08#	-> KP_8
+09#	-> KP_9
+000	-> RESERVED
+0USR1	-> QUAL RightShift 
+0USR2	-> QUAL RightCtrl 
+0USR3	-> QUAL RightAlt 
+0USR4	-> QUAL RightMeta 
+0USR5	-> QUAL LeftShift 
+0USR6	-> QUAL LeftCtrl 
+0USR7	-> QUAL LeftAlt 
+0USR8	-> QUAL LeftMeta 
+//	super 0# key prefix
+0#10	-> QUOTE
+0#11	-> LeftAlt 1
+0#12	-> LeftAlt i
+0#13	-> LeftAlt w
+0#14	-> LeftShift LeftAlt `
+0#15	-> LeftAlt r
+0#16	-> LeftAlt v
+0#17	-> LeftAlt a
+0#18	-> LeftAlt d
+0#19	-> RESET
+0#20	-> QUOTE
+0#21	-> LeftAlt Enter
+0#22	-> LeftAlt 2
+0#23	-> LeftAlt .
+0#24	-> QUAL LeftCtrl 
+0#25	-> LeftShift LeftAlt 6
+0#26	-> LeftAlt -
+0#27	-> LeftAlt ,
+0#28	-> LeftAlt o
+0#29	-> LeftShift LeftAlt 1
+0#30	-> QUOTE
+0#31	-> LeftAlt q
+0#32	-> LeftAlt l
+0#33	-> LeftAlt 3
+0#34	-> LeftShift LeftAlt '
+0#35	-> LeftAlt m
+0#36	-> LeftShift LeftAlt ,
+0#37	-> LeftAlt '
+0#38	-> LeftAlt f
+0#39	-> LeftAlt u
+0#40	-> QUOTE
+0#41	-> LeftShift LeftAlt 4
+0#42	-> LeftAlt a
+0#43	-> LeftAlt y
+0#44	-> LeftAlt 4
+0#45	-> LeftAlt e
+0#46	-> LeftAlt k
+0#47	-> LeftShift LeftAlt 5
+0#48	-> LeftAlt s
+0#49	-> LeftAlt x
+0#50	-> QUOTE
+0#51	-> QUAL LeftShift 
+0#52	-> LeftAlt \
+0#53	-> LeftShift LeftAlt 9
+0#54	-> LeftAlt Space
+0#55	-> LeftAlt 5
+0#56	-> LeftAlt Tab
+0#57	-> QUAL LeftMeta 
+0#58	-> LeftAlt [
+0#59	-> LeftShift LeftAlt 0
+0#60	-> QUOTE
+0#61	-> LeftShift LeftAlt 7
+0#62	-> LeftAlt b
+0#63	-> LeftShift LeftAlt .
+0#64	-> LeftShift LeftAlt 8
+0#65	-> LeftAlt o
+0#66	-> LeftAlt 6
+0#67	-> LeftShift LeftAlt =
+0#68	-> LeftAlt u
+0#69	-> LeftShift LeftAlt [
+0#70	-> QUOTE
+0#71	-> LeftAlt s
+0#72	-> LeftAlt h
+0#73	-> LeftAlt =
+0#74	-> LeftShift LeftAlt /
+0#75	-> LeftAlt t
+0#76	-> LeftAlt j
+0#77	-> LeftAlt 7
+0#78	-> LeftAlt n
+0#79	-> LeftAlt z
+0#80	-> QUOTE
+0#81	-> LeftAlt ;
+0#82	-> LeftShift LeftAlt 2
+0#83	-> LeftShift LeftAlt ;
+0#84	-> QUAL LeftAlt 
+0#85	-> LeftAlt ]
+0#86	-> LeftShift LeftAlt \
+0#87	-> LeftAlt BackSpace
+0#88	-> LeftAlt 8
+0#89	-> LeftAlt ESC
+0#90	-> QUOTE
+0#91	-> LeftShift LeftAlt 3
+0#92	-> LeftAlt p
+0#93	-> LeftAlt `
+0#94	-> LeftShift LeftAlt -
+0#95	-> LeftAlt g
+0#96	-> LeftShift LeftAlt ]
+0#97	-> LeftAlt /
+0#98	-> LeftAlt c
+0#99	-> LeftAlt 9
+0#0#	-> LeftAlt Insert
+0#1#	-> LeftAlt End
+0#2#	-> LeftAlt Down
+0#3#	-> LeftAlt PageDown
+0#4#	-> LeftAlt Left
+0#5#	-> LeftAlt Delete
+0#6#	-> LeftAlt Right
+0#7#	-> LeftAlt Home
+0#8#	-> LeftAlt Up
+0#9#	-> LeftAlt PageUp
+0#00	-> LeftAlt 0
+0#USR1	-> QUAL LeftShift 
+0#USR2	-> QUAL LeftCtrl 
+0#USR3	-> QUAL LeftAlt 
+0#USR4	-> QUAL LeftMeta 
+0#USR5	-> QUAL RightShift 
+0#USR6	-> QUAL RightCtrl 
+0#USR7	-> QUAL RightAlt 
+0#USR8	-> QUAL RightMeta 
+//	game *# key prefix
+*#0	-> QUOTE
+*#1	-> z
+*#2	-> x
+*#3	-> c
+*#4	-> a
+*#5	-> s
+*#6	-> d
+*#7	-> q
+*#8	-> w
+*#9	-> e
+*##	-> LeftCtrl
+*#*	-> LeftAlt
+*#USR1	-> 2
+*#USR2	-> 3
+*#USR3	-> 4
+*#USR4	-> r
+*#USR5	-> F1
+*#USR6	-> F2
+*#USR7	-> F3
+*#USR8	-> F4
+*#SPECIAL	-> 1
+//	quote game 0*# key prefix
+0*#0	-> Space
+0*#1	-> v
+0*#2	-> b
+0*#3	-> n
+0*#4	-> f
+0*#5	-> g
+0*#6	-> h
+0*#7	-> t
+0*#8	-> y
+0*#9	-> u
+0*##	-> RESET
+0*#*	-> Tab
+0*#USR1	-> 6
+0*#USR2	-> 7
+0*#USR3	-> 8
+0*#USR4	-> i
+0*#USR5	-> F5
+0*#USR6	-> F6
+0*#USR7	-> F7
+0*#USR8	-> F8
+0*#SPECIAL	-> 5
+//	# Macro strings * key prefix
+macro:
+*10	-> QUOTE
+*11	-> LeftCtrl 1
+*12	-> LeftCtrl i
+*13	-> LeftCtrl w
+*14	-> LeftShift LeftCtrl `
+*15	-> LeftCtrl r
+*16	-> LeftCtrl v
+*17	-> LeftCtrl a
+*18	-> LeftCtrl d
+*19	-> RESET
+*20	-> QUOTE
+*21	-> LeftCtrl Enter
+*22	-> LeftCtrl 2
+*23	-> LeftCtrl .
+*24	-> QUAL LeftCtrl 
+*25	-> LeftShift LeftCtrl 6
+*26	-> LeftCtrl -
+*27	-> LeftCtrl ,
+*28	-> LeftCtrl o
+*29	-> LeftShift LeftCtrl 1
+*30	-> QUOTE
+*31	-> LeftCtrl q
+*32	-> LeftCtrl l
+*33	-> LeftCtrl 3
+*34	-> LeftShift LeftCtrl '
+*35	-> LeftCtrl m
+*36	-> LeftShift LeftCtrl ,
+*37	-> LeftCtrl '
+*38	-> LeftCtrl f
+*39	-> LeftCtrl u
+*40	-> QUOTE
+*41	-> LeftShift LeftCtrl 4
+*42	-> LeftCtrl a
+*43	-> LeftCtrl y
+*44	-> LeftCtrl 4
+*45	-> LeftCtrl e
+*46	-> LeftCtrl k
+*47	-> LeftShift LeftCtrl 5
+*48	-> LeftCtrl s
+*49	-> LeftCtrl x
+*50	-> QUOTE
+*51	-> QUAL LeftShift 
+*52	-> LeftCtrl \
+*53	-> LeftShift LeftCtrl 9
+*54	-> LeftCtrl Space
+*55	-> LeftCtrl 5
+*56	-> LeftCtrl Tab
+*57	-> QUAL LeftMeta 
+*58	-> LeftCtrl [
+*59	-> LeftShift LeftCtrl 0
+*60	-> QUOTE
+*61	-> LeftShift LeftCtrl 7
+*62	-> LeftCtrl b
+*63	-> LeftShift LeftCtrl .
+*64	-> LeftShift LeftCtrl 8
+*65	-> LeftCtrl o
+*66	-> LeftCtrl 6
+*67	-> LeftShift LeftCtrl =
+*68	-> LeftCtrl u
+*69	-> LeftShift LeftCtrl [
+*70	-> QUOTE
+*71	-> LeftCtrl s
+*72	-> LeftCtrl h
+*73	-> LeftCtrl =
+*74	-> LeftShift LeftCtrl /
+*75	-> LeftCtrl t
+*76	-> LeftCtrl j
+*77	-> LeftCtrl 7
+*78	-> LeftCtrl n
+*79	-> LeftCtrl z
+*80	-> QUOTE
+*81	-> LeftCtrl ;
+*82	-> LeftShift LeftCtrl 2
+*83	-> LeftShift LeftCtrl ;
+*84	-> QUAL LeftAlt 
+*85	-> LeftCtrl ]
+*86	-> LeftShift LeftCtrl \
+*87	-> LeftCtrl BackSpace
+*88	-> LeftCtrl 8
+*89	-> LeftCtrl ESC
+*90	-> QUOTE
+*91	-> LeftShift LeftCtrl 3
+*92	-> LeftCtrl p
+*93	-> LeftCtrl `
+*94	-> LeftShift LeftCtrl -
+*95	-> LeftCtrl g
+*96	-> LeftShift LeftCtrl ]
+*97	-> LeftCtrl /
+*98	-> LeftCtrl c
+*99	-> LeftCtrl 9
+*0#	-> LeftCtrl Insert
+*1#	-> LeftCtrl End
+*2#	-> LeftCtrl Down
+*3#	-> LeftCtrl PageDown
+*4#	-> LeftCtrl Left
+*5#	-> LeftCtrl Delete
+*6#	-> LeftCtrl Right
+*7#	-> LeftCtrl Home
+*8#	-> LeftCtrl Up
+*9#	-> LeftCtrl PageUp
+*00	-> LeftCtrl 0
+*USR1	-> QUAL LeftShift 
+*USR2	-> QUAL LeftCtrl 
+*USR3	-> QUAL LeftAlt 
+*USR4	-> QUAL LeftMeta 
+*USR5	-> QUAL RightShift 
+*USR6	-> QUAL RightCtrl 
+*USR7	-> QUAL RightAlt 
+*USR8	-> QUAL RightMeta 
