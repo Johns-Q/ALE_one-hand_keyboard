@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 
 #include "aohk.h"
@@ -146,246 +147,14 @@ static unsigned long AOHKLastJiffies;	// last key jiffy
 **		The second value is the scancode to send.
 **		Comments are the ascii output of the keyboard driver.
 */
-static OHKey AOHKTable[10*10+1+8] = {
-#ifdef DEFAULT
-/*1->0*/ { RESET,	0	},	// RESET
-/*1->1*/ { 0,		KEY_1	},	// 1
-/*1->2*/ { 0,		0x17	},	// i
-/*1->3*/ { 0,		0x11	},	// w
-/*1->4*/ { ALTGR,	0x1B	},	// ~
-/*1->5*/ { 0,		0x13	},	// r
-/*1->6*/ { 0,		0x2F	},	// v
-/*1->7*/ { 0,		0x28	},	// ä
-/*1->8*/ { 0,		0x20	},	// d
-/*1->9*/ { 0,		0x10	},	// q
-/*2->0*/ { RESET,	0	},	// RESET
-/*2->1*/ { 0,		0x1C	},	// Return
-/*2->2*/ { 0,		0x03	},	// 2
-/*2->3*/ { 0,		0x34	},	// .
-/*2->4*/ { QUAL,	Q_CTRL_L },	// Control_L
-/*2->5*/ { 0,		KEY_GRAVE	},	// ^
-/*2->6*/ { 0,		0x35	},	// -
-/*2->7*/ { 0,		0x33	},	// ,
-/*2->8*/ { 0,		0x27	},	// ö
-/*2->9*/ { SHIFT,	KEY_1	},	// !
-/*3->0*/ { RESET,	0	},	// RESET
-/*3->1*/ { 0,		0x10	},	// q
-/*3->2*/ { 0,		0x26	},	// l
-/*3->3*/ { 0,		0x04	},	// 3
-/*3->4*/ { SHIFT,	0x03	},	// "
-/*3->5*/ { 0,		0x32	},	// m
-/*3->6*/ { 0,		0x56	},	// <
-/*3->7*/ { 0,		0x0D	},	// '
-/*3->8*/ { 0,		0x21	},	// f
-/*3->9*/ { 0,		0x1A	},	// ü
-/*4->0*/ { RESET,	0	},	// RESET
-/*4->1*/ { SHIFT,	0x05	},	// $
-/*4->2*/ { 0,		0x1E	},	// a
-/*4->3*/ { 0,		KEY_Z	},	// y
-/*4->4*/ { 0,		0x05	},	// 4
-/*4->5*/ { 0,		0x12	},	// e
-/*4->6*/ { 0,		0x25	},	// k
-/*4->7*/ { SHIFT,	0x06	},	// %
-/*4->8*/ { 0,		0x1F	},	// s
-/*4->9*/ { 0,		0x2D	},	// x
-/*5->0*/ { RESET,	0	},	// RESET
-/*5->1*/ { QUAL,	Q_SHFT_L },	// Shift_L
-/*5->2*/ { ALTGR,	0x0C	},	// \ FUCK GNU (gcc >2.95.4 broken)
-/*5->3*/ { SHIFT,	0x09	},	// (
-/*5->4*/ { 0,		KEY_SPACE	},	// Space
-/*5->5*/ { 0,		0x06	},	// 5
-/*5->6*/ { 0,		0x0F	},	// Tabulator
-/*5->7*/ { QUAL,	Q_GUI_L },	// Gui_L
-/*5->8*/ { ALTGR,	0x09	},	// [
-/*5->9*/ { SHIFT,	0x0A	},	// )
-/*6->0*/ { RESET,	0	},	// RESET
-/*6->1*/ { SHIFT,	0x07	},	// &
-/*6->2*/ { 0,		0x30	},	// b
-/*6->3*/ { SHIFT,	0x56	},	// >
-/*6->4*/ { SHIFT,	0x1B	},	// *
-/*6->5*/ { 0,		0x18	},	// o
-/*6->6*/ { 0,		0x07	},	// 6
-/*6->7*/ { 0,		0x1B	},	// +
-/*6->8*/ { 0,		0x16	},	// u
-/*6->9*/ { ALTGR,	0x08	},	// {
-/*7->0*/ { RESET,	0	},	// RESET
-/*7->1*/ { 0,		0x0C	},	// ß
-/*7->2*/ { 0,		0x23	},	// h
-/*7->3*/ { SHIFT,	0x0B	},	// =
-/*7->4*/ { SHIFT,	0x0C	},	// ?
-/*7->5*/ { 0,		0x14	},	// t
-/*7->6*/ { 0,		0x24	},	// j
-/*7->7*/ { 0,		0x08	},	// 7
-/*7->8*/ { 0,		KEY_N	},	// n
-/*7->9*/ { 0,		KEY_Y	},	// z
-/*8->0*/ { RESET,	0	},	// RESET
-/*8->1*/ { SHIFT,	0x33	},	// ;
-/*8->2*/ { ALTGR,	0x10	},	// @
-/*8->3*/ { SHIFT,	0x34	},	// :
-/*8->4*/ { QUAL,	Q_ALT_L	},	// Alt_L
-/*8->5*/ { ALTGR,	0x0A	},	// ]
-/*8->6*/ { ALTGR,	0x56	},	// |
-/*8->7*/ { 0,		0x0E	},	// BackSpace
-/*8->8*/ { 0,		0x09	},	// 8
-/*8->9*/ { 0,		0x01	},	// Escape
-/*9->0*/ { RESET,	0	},	// RESET
-/*9->1*/ { 0,		0x2B	},	// #
-/*9->2*/ { 0,		0x19	},	// p
-/*9->3*/ { SHIFT,	0x0D	},	// `
-/*9->4*/ { SHIFT,	0x35	},	// _
-/*9->5*/ { 0,		0x22	},	// g
-/*9->6*/ { ALTGR,	0x0B	},	// }
-/*9->7*/ { SHIFT,	0x08	},	// /
-/*9->8*/ { 0,		0x2E	},	// c
-/*9->9*/ { 0,		0x0A	},	// 9
-
-/*0->#*/ { 0,		0x6E	},	// INSERT
-/*1->#*/ { 0,		0x6B	},	// END
-/*2->#*/ { 0,		0x6C	},	// CURSOR-DOWN
-/*3->#*/ { 0,		0x6D	},	// PAGE-DOWN
-/*4->#*/ { 0,		0x69	},	// CURSOR-LEFT
-/*5->#*/ { 0,		0x6F	},	// DELETE ( ,->5 )
-/*6->#*/ { 0,		0x6A	},	// CURSOR-RIGHT
-/*7->#*/ { 0,		0x66	},	// HOME
-/*8->#*/ { 0,		0x67	},	// CURSOR-UP
-/*9->#*/ { 0,		0x68	},	// PAGE-UP
-
-/*0->0*/ { 0,		0x0B	},	// 0
-
-/*USR1*/ { QUAL,	Q_SHFT_L },	// Shift_L
-/*USR2*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
-/*USR3*/ { QUAL,	Q_ALT_L },	// Alt_L
-/*USR4*/ { QUAL,	Q_GUI_L },	// Gui_L
-/*USR5*/ { QUAL,	Q_SHFT_R },	// Shift_R
-/*USR6*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
-/*USR7*/ { QUAL,	Q_ALT_R },	// Alt_R
-/*USR8*/ { QUAL,	Q_GUI_R },	// Gui_R
-
-// FIXME: Should I move game mode table to here?
-#endif
-};
+static OHKey AOHKTable[10*10+1+8];
 
 /*
 **	Table quoted sequences to scancodes.
 **		The first value are the flags and modifiers.
 **		The second value is the scancode to send.
 */
-static OHKey AOHKQuoteTable[10*10+1+8] = {
-#ifdef DEFAULT
-/*0->1->0*/ { RESET,	0	},	// RESET
-/*0->1->1*/ { 0,	0x3B	},	// F1
-/*0->1->2*/ { SHIFT,	0x17	},	// I
-/*0->1->3*/ { SHIFT,	0x11	},	// W
-/*0->1->4*/ { 0,	KEY_NUMLOCK	},	// NUM-LOCK
-/*0->1->5*/ { SHIFT,	0x13	},	// R
-/*0->1->6*/ { SHIFT,	0x2F	},	// V
-/*0->1->7*/ { SHIFT,	0x28	},	// Ä
-/*0->1->8*/ { SHIFT,	0x20	},	// D
-/*0->1->9*/ { SHIFT,	0x10	},	// Q
-/*0->2->0*/ { RESET,	0	},	// RESET
-/*0->2->1*/ { 0,	0x60	},	// KP-ENTER
-/*0->2->2*/ { 0,	0x3C	},	// F2
-/*0->2->3*/ { 0,	0x53	},	// KP-.
-/*0->2->4*/ { QUAL,	Q_CTRL_R },	// Control_R
-/*0->2->5*/ { 0,	KEY_CAPSLOCK },	// CAPS-LOCK
-/*0->2->6*/ { 0,	0x4A	},	// KP--
-/*0->2->7*/ { 0,	0x53	},	// KP-,
-/*0->2->8*/ { SHIFT,	0x27	},	// Ö
-/*0->2->9*/ { 0,	0x52	},	// KP-0 (!not better place found)
-/*0->3->0*/ { RESET,	0	},	// RESET
-/*0->3->1*/ { SHIFT,	0x10	},	// Q
-/*0->3->2*/ { SHIFT,	0x26	},	// L
-/*0->3->3*/ { 0,	0x3D	},	// F3
-/*0->3->4*/ { SHIFT,	0x04	},	// §
-/*0->3->5*/ { SHIFT,	0x32	},	// M
-/*0->3->6*/ { 0,	0x46	},	// SCROLL-LOCK
-/*0->3->7*/ { 0,	0x2B	},	// ' (SHIFT #, doubled)
-/*0->3->8*/ { SHIFT,	0x21	},	// F
-/*0->3->9*/ { SHIFT,	0x1A	},	// Ü
-/*0->4->0*/ { RESET,	0	},	// RESET
-/*0->4->1*/ { SHIFT,	KEY_GRAVE	},	// °
-/*0->4->2*/ { SHIFT,	0x1E	},	// A
-/*0->4->3*/ { SHIFT,	KEY_Z	},	// Y
-/*0->4->4*/ { 0,	0x3E	},	// F4
-/*0->4->5*/ { SHIFT,	0x12	},	// E
-/*0->4->6*/ { SHIFT,	0x25	},	// K
-/*0->4->7*/ { 0,	0x62	},	// KP-% (doubled)
-/*0->4->8*/ { SHIFT,	0x1F	},	// S
-/*0->4->9*/ { SHIFT,	0x2D	},	// X
-/*0->5->0*/ { RESET,	0	},	// RESET
-/*0->5->1*/ { QUAL,	Q_SHFT_R },	// Shift_R
-/*0->5->2*/ { ALTGR,	0x56	},	// | (QUOTE \, doubled)
-/*0->5->3*/ { SHIFT,	0x09	},	// ( (FREE)
-/*0->5->4*/ { SHIFT,	KEY_SPACE	},	// SHIFT Space
-/*0->5->5*/ { 0,	0x3F	},	// F5
-/*0->5->6*/ { SHIFT,	0x0F	},	// SHIFT Tabulator
-/*0->5->7*/ { QUAL,	Q_GUI_R },	// Gui_R
-/*0->5->8*/ { ALTGR,	0x07	},	// { (QUOTE [, doubled)
-/*0->5->9*/ { SHIFT,	0x0A	},	// ) (FREE)
-/*0->6->0*/ { RESET,	0	},	// RESET
-/*0->6->1*/ { ALTGR,	0x12	},	// ¤
-/*0->6->2*/ { SHIFT,	0x30	},	// B
-/*0->6->3*/ { ALTGR,	0x2E	},	// ¢
-/*0->6->4*/ { 0,	0x37	},	// KP-*
-/*0->6->5*/ { SHIFT,	0x18	},	// O
-/*0->6->6*/ { 0,	0x40	},	// F6
-/*0->6->7*/ { 0,	0x4E	},	// KP-+
-/*0->6->8*/ { SHIFT,	0x16	},	// U
-/*0->6->9*/ { ALTGR,	0x08	},	// { (FREE)
-/*0->7->0*/ { RESET,	0	},	// RESET
-/*0->7->1*/ { 0,	0x63	},	// PRINT/SYSRQ
-/*0->7->2*/ { SHIFT,	0x23	},	// H
-/*0->7->3*/ { 0,	0x44	},	// F10
-/*0->7->4*/ { 0,	0x57	},	// F11
-/*0->7->5*/ { SHIFT,	0x14	},	// T
-/*0->7->6*/ { SHIFT,	0x24	},	// J
-/*0->7->7*/ { 0,	0x41	},	// F7
-/*0->7->8*/ { SHIFT,	KEY_N	},	// N
-/*0->7->9*/ { SHIFT,	KEY_Y	},	// Z
-/*0->8->0*/ { RESET,	0	},	// RESET
-/*0->8->1*/ { 0,	0x77	},	// PAUSE
-/*0->8->2*/ { SHIFT,	0x0D	},	// ` (QUOTE @, doubled)
-/*0->8->3*/ { 0,	0x65	},	// BREAK
-/*0->8->4*/ { QUAL,	Q_ALT_R	},	// Alt_R
-/*0->8->5*/ { ALTGR,	0x0B	},	// } (QUOTE ], doubled)
-/*0->8->6*/ { 0,	0x54	},	// SYSRQ
-/*0->8->7*/ { SHIFT,	0x0E	},	// SHIFT BackSpace
-/*0->8->8*/ { 0,	0x42	},	// F8
-/*0->8->9*/ { SHIFT,	0x01	},	// SHIFT Escape
-/*0->9->0*/ { RESET,	0	},	// RESET
-/*0->9->1*/ { 0,	0x7F	},	// MENU
-/*0->9->2*/ { SHIFT,	0x19	},	// P
-/*0->9->3*/ { 0,	0x58	},	// F12
-/*0->9->4*/ { 0,	0x0E	},	// DEL 0x7F (QUOTE _, doubled)
-/*0->9->5*/ { SHIFT,	0x22	},	// G
-/*0->9->6*/ { SPECIAL,	0	},	// } (FREE)
-/*0->9->7*/ { 0,	0x62	},	// KP-/
-/*0->9->8*/ { SHIFT,	0x2E	},	// C
-/*0->9->9*/ { 0,	0x43	},	// F9
-
-/*0->0->#*/ { 0,	0	},	// Not possible! 00 is 0
-/*0->1->#*/ { 0,	0x4F	},	// KP-1
-/*0->2->#*/ { 0,	0x50	},	// KP-2
-/*0->3->#*/ { 0,	0x51	},	// KP-3
-/*0->4->#*/ { 0,	0x4B	},	// KP-4
-/*0->5->#*/ { 0,	0x53	},	// KP-5
-/*0->6->#*/ { 0,	0x4D	},	// KP-6
-/*0->7->#*/ { 0,	0x47	},	// KP-7
-/*0->8->#*/ { 0,	0x48	},	// KP-8
-/*0->9->#*/ { 0,	0x49	},	// KP-9
-
-/*0->0->0*/ { 0,	0	},	// Not possible! 00 is 0
-
-/*0->USR1*/ { QUAL,	Q_SHFT_R },	// Shift_R
-/*0->USR2*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
-/*0->USR3*/ { QUAL,	Q_ALT_R },	// Alt_R
-/*0->USR4*/ { QUAL,	Q_GUI_R },	// Gui_R
-/*0->USR5*/ { QUAL,	Q_SHFT_L },	// Shift_L
-/*0->USR6*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
-/*0->USR7*/ { QUAL,	Q_ALT_L },	// Alt_L
-/*0->USR8*/ { QUAL,	Q_GUI_L },	// Gui_L
-#endif
-};
+static OHKey AOHKQuoteTable[10*10+1+8];
 
 /*
 **	Table super quoted sequences to scancodes.
@@ -394,122 +163,7 @@ static OHKey AOHKQuoteTable[10*10+1+8] = {
 **		The second value is the scancode to send.
 **	FIXME:	ALT? Keycode?
 */
-static OHKey AOHKSuperTable[10*10+1+8] = {
-#ifdef DEFAULT
-/*1->0*/ { RESET,	0	},	// RESET
-/*1->1*/ { ALT,		KEY_1	},	// 1
-/*1->2*/ { ALT,		0x17	},	// i
-/*1->3*/ { ALT,		0x11	},	// w
-/*1->4*/ { ALTGR,	0x1B	},	// ~
-/*1->5*/ { ALT,		0x13	},	// r
-/*1->6*/ { ALT,		0x2F	},	// v
-/*1->7*/ { ALT,		0x28	},	// ä
-/*1->8*/ { ALT,		0x20	},	// d
-/*1->9*/ { ALT,		0x10	},	// q
-/*2->0*/ { RESET,	0	},	// RESET
-/*2->1*/ { ALT,		0x1C	},	// Return
-/*2->2*/ { ALT,		0x03	},	// 2
-/*2->3*/ { ALT,		0x34	},	// .
-/*2->4*/ { QUAL,	Q_CTRL_L },	// Control_L
-/*2->5*/ { ALT,		KEY_GRAVE	},	// ^
-/*2->6*/ { ALT,		0x35	},	// -
-/*2->7*/ { ALT,		0x33	},	// ,
-/*2->8*/ { ALT,		0x27	},	// ö
-/*2->9*/ { ALT|SHIFT,	KEY_1	},	// !
-/*3->0*/ { RESET,	0	},	// RESET
-/*3->1*/ { ALT,		0x10	},	// q
-/*3->2*/ { ALT,		0x26	},	// l
-/*3->3*/ { ALT,		0x04	},	// 3
-/*3->4*/ { ALT|SHIFT,	0x03	},	// "
-/*3->5*/ { ALT,		0x32	},	// m
-/*3->6*/ { ALT,		0x56	},	// <
-/*3->7*/ { ALT,		0x0D	},	// '
-/*3->8*/ { ALT,		0x21	},	// f
-/*3->9*/ { ALT,		0x1A	},	// ü
-/*4->0*/ { RESET,	0	},	// RESET
-/*4->1*/ { ALT|SHIFT,	0x05	},	// $
-/*4->2*/ { ALT,		0x1E	},	// a
-/*4->3*/ { ALT,		KEY_Z	},	// y
-/*4->4*/ { ALT,		0x05	},	// 4
-/*4->5*/ { ALT,		0x12	},	// e
-/*4->6*/ { ALT,		0x25	},	// k
-/*4->7*/ { ALT|SHIFT,	0x06	},	// %
-/*4->8*/ { ALT,		0x1F	},	// s
-/*4->9*/ { ALT,		0x2D	},	// x
-/*5->0*/ { RESET,	0	},	// RESET
-/*5->1*/ { QUAL,	Q_SHFT_L },	// Shift_L
-/*5->2*/ { ALTGR,	0x0C	},	// \ FUCK GNU (gcc >2.95.4 broken)
-/*5->3*/ { ALT|SHIFT,	0x09	},	// (
-/*5->4*/ { ALT,		KEY_SPACE	},	// Space
-/*5->5*/ { ALT,		0x06	},	// 5
-/*5->6*/ { ALT,		0x0F	},	// Tabulator
-/*5->7*/ { QUAL,	Q_GUI_L },	// Gui_L
-/*5->8*/ { ALTGR,	0x09	},	// [
-/*5->9*/ { ALT|SHIFT,	0x0A	},	// )
-/*6->0*/ { RESET,	0	},	// RESET
-/*6->1*/ { ALT|SHIFT,	0x07	},	// &
-/*6->2*/ { ALT,		0x30	},	// b
-/*6->3*/ { ALT|SHIFT,	0x56	},	// >
-/*6->4*/ { ALT|SHIFT,	0x1B	},	// *
-/*6->5*/ { ALT,		0x18	},	// o
-/*6->6*/ { ALT,		0x07	},	// 6
-/*6->7*/ { ALT,		0x1B	},	// +
-/*6->8*/ { ALT,		0x16	},	// u
-/*6->9*/ { ALTGR,	0x08	},	// {
-/*7->0*/ { RESET,	0	},	// RESET
-/*7->1*/ { ALT,		0x0C	},	// ß
-/*7->2*/ { ALT,		0x23	},	// h
-/*7->3*/ { ALT|SHIFT,	0x0B	},	// =
-/*7->4*/ { ALT|SHIFT,	0x0C	},	// ?
-/*7->5*/ { ALT,		0x14	},	// t
-/*7->6*/ { ALT,		0x24	},	// j
-/*7->7*/ { ALT,		0x08	},	// 7
-/*7->8*/ { ALT,		KEY_N	},	// n
-/*7->9*/ { ALT,		KEY_Y	},	// z
-/*8->0*/ { RESET,	0	},	// RESET
-/*8->1*/ { ALT|SHIFT,	0x33	},	// ;
-/*8->2*/ { ALTGR,	0x10	},	// @
-/*8->3*/ { ALT|SHIFT,	0x34	},	// :
-/*8->4*/ { QUAL,	Q_ALT_L	},	// Alt_L
-/*8->5*/ { ALTGR,	0x0A	},	// ]
-/*8->6*/ { ALTGR,	0x56	},	// |
-/*8->7*/ { ALT,		0x0E	},	// BackSpace
-/*8->8*/ { ALT,		0x09	},	// 8
-/*8->9*/ { ALT,		0x01	},	// Escape
-/*9->0*/ { RESET,	0	},	// RESET
-/*9->1*/ { ALT,		0x2B	},	// #
-/*9->2*/ { ALT,		0x19	},	// p
-/*9->3*/ { ALT|SHIFT,	0x0D	},	// `
-/*9->4*/ { ALT|SHIFT,	0x35	},	// _
-/*9->5*/ { ALT,		0x22	},	// g
-/*9->6*/ { ALTGR,	0x0B	},	// }
-/*9->7*/ { ALT|SHIFT,	0x08	},	// /
-/*9->8*/ { ALT,		0x2E	},	// c
-/*9->9*/ { ALT,		0x0A	},	// 9
-
-/*0->#*/ { ALT,		0x6E	},	// INSERT
-/*1->#*/ { ALT,		0x6B	},	// END
-/*2->#*/ { ALT,		0x6C	},	// CURSOR-DOWN
-/*3->#*/ { ALT,		0x6D	},	// PAGE-DOWN
-/*4->#*/ { ALT,		0x69	},	// CURSOR-LEFT
-/*5->#*/ { ALT,		0x6F	},	// DELETE ( ,->5 )
-/*6->#*/ { ALT,		0x6A	},	// CURSOR-RIGHT
-/*7->#*/ { ALT,		0x66	},	// HOME
-/*8->#*/ { ALT,		0x67	},	// CURSOR-UP
-/*9->#*/ { ALT,		0x68	},	// PAGE-UP
-
-/*0->0*/ { ALT,		0x0B	},	// 0
-
-/*USR1*/ { QUAL,	Q_SHFT_L },	// Shift_L
-/*USR2*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
-/*USR3*/ { QUAL,	Q_ALT_L },	// Alt_L
-/*USR4*/ { QUAL,	Q_GUI_L },	// Gui_L
-/*USR5*/ { QUAL,	Q_SHFT_R },	// Shift_R
-/*USR6*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
-/*USR7*/ { QUAL,	Q_ALT_R },	// Alt_R
-/*USR8*/ { QUAL,	Q_GUI_R },	// Gui_R
-#endif
-};
+static OHKey AOHKSuperTable[10*10+1+8];
 
 /*
 **	Game Table sequences to scancodes.
@@ -519,31 +173,31 @@ static OHKey AOHKSuperTable[10*10+1+8] = {
 static OHKey AOHKGameTable[OH_SPECIAL+1] = {
 #ifdef DEFAULT
 // This can't be used, quote is used insteed.
-/* 0 */ { QUOTE,	KEY_SPACE	},	// SPACE
+/* 0 */ { QUOTE,	KEY_SPACE },	// SPACE
 /* 1 */ { 0,		KEY_Z	},	// y
-/* 2 */ { 0,		0x2D	},	// x
-/* 3 */ { 0,		0x2E	},	// c
+/* 2 */ { 0,		KEY_X	},	// x
+/* 3 */ { 0,		KEY_C	},	// c
 
-/* 4 */ { 0,		0x1E	},	// a
-/* 5 */ { 0,		0x1F	},	// s
-/* 6 */ { 0,		0x20	},	// d
+/* 4 */ { 0,		KEY_A	},	// a
+/* 5 */ { 0,		KEY_S	},	// s
+/* 6 */ { 0,		KEY_D	},	// d
 
-/* 7 */ { 0,		0x10	},	// q
-/* 8 */ { 0,		0x11	},	// w
-/* 9 */ { 0,		0x12	},	// e
+/* 7 */ { 0,		KEY_Q	},	// q
+/* 8 */ { 0,		KEY_W	},	// w
+/* 9 */ { 0,		KEY_E	},	// e
 
-/* # */ { 0,		0x1D	},	// Ctrl_L
-/* . */ { 0,		0x38	},	// Alt_L
+/* # */ { 0,		KEY_LEFTCTRL },	// Ctrl_L
+/* . */ { 0,		KEY_LEFTALT },	// Alt_L
 
-/* % */ { 0,		0x03	},	// 2
-/* * */ { 0,		0x04	},	// 3
-/* - */ { 0,		0x05	},	// 4
-/* + */ { 0,		0x13	},	// r
+/* % */ { 0,		KEY_2	},	// 2
+/* * */ { 0,		KEY_3	},	// 3
+/* - */ { 0,		KEY_4	},	// 4
+/* + */ { 0,		KEY_R	},	// r
 
-/* ? */ { 0,		0x3B	},	// F1
-/* ? */ { 0,		0x3C	},	// F2
-/* ? */ { 0,		0x3D	},	// F3
-/* ? */ { 0,		0x3E	},	// F4
+/* ? */ { 0,		KEY_F1	},	// F1
+/* ? */ { 0,		KEY_F2	},	// F2
+/* ? */ { 0,		KEY_F3	},	// F3
+/* ? */ { 0,		KEY_F4	},	// F4
 
 /*NUM*/ { 0,		KEY_1	},	// 1
 #endif
@@ -554,159 +208,47 @@ static OHKey AOHKGameTable[OH_SPECIAL+1] = {
 */
 static OHKey AOHKQuoteGameTable[OH_SPECIAL+1] = {
 #ifdef DEFAULT
-/* 0 */ { 0,		KEY_SPACE	},	// SPACE
-/* 1 */ { 0,		0x2F	},	// v
-/* 2 */ { 0,		0x30	},	// b
+/* 0 */ { 0,		KEY_SPACE },	// SPACE
+/* 1 */ { 0,		KEY_V	},	// v
+/* 2 */ { 0,		KEY_B	},	// b
 /* 3 */ { 0,		KEY_N	},	// n
 
-/* 4 */ { 0,		0x21	},	// f
-/* 5 */ { 0,		0x22	},	// g
-/* 6 */ { 0,		0x23	},	// h
+/* 4 */ { 0,		KEY_F	},	// f
+/* 5 */ { 0,		KEY_G	},	// g
+/* 6 */ { 0,		KEY_H	},	// h
 
-/* 7 */ { 0,		0x14	},	// t
+/* 7 */ { 0,		KEY_T	},	// t
 /* 8 */ { 0,		KEY_Y	},	// z
-/* 9 */ { 0,		0x16	},	// u
+/* 9 */ { 0,		KEY_U	},	// u
 
-/* # */ { RESET,	0	},	// Return to normal mode
-/* . */ { 0,		0x0F	},	// TAB
+/* # */ { RESET,	KEY_RESERVED },	// Return to normal mode
+/* . */ { 0,		KEY_TAB	},	// TAB
 
-/* % */ { 0,		0x07	},	// 6
-/* * */ { 0,		0x08	},	// 7
-/* - */ { 0,		0x09	},	// 8
-/* + */ { 0,		0x17	},	// i
+/* % */ { 0,		KEY_6	},	// 6
+/* * */ { 0,		KEY_7	},	// 7
+/* - */ { 0,		KEY_8	},	// 8
+/* + */ { 0,		KEY_I	},	// i
 
-/* ? */ { 0,		0x3F	},	// F5
-/* ? */ { 0,		0x40	},	// F6
-/* ? */ { 0,		0x41	},	// F7
-/* ? */ { 0,		0x42	},	// F8
+/* ? */ { 0,		KEY_F5	},	// F5
+/* ? */ { 0,		KEY_F6	},	// F6
+/* ? */ { 0,		KEY_F7	},	// F7
+/* ? */ { 0,		KEY_F8	},	// F8
 
-/*NUM*/ { 0,		0x06	},	// 5
+/*NUM*/ { 0,		KEY_5	},	// 5
 #endif
 };
-
 //
-//	Macro Table sequences to scancodes.
-//
-static unsigned char* AOHKMacroTable[10*10+1+8] = {
-#ifdef DEFAULT
-// FIXME: Need because of static pointers.
-#endif
-/**->1->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->1->1*/ (unsigned char[]){ CTL,		KEY_1	},	// 1
-/**->1->2*/ (unsigned char[]){ CTL,		0x17	},	// i
-/**->1->3*/ (unsigned char[]){ CTL,		0x11	},	// w
-/**->1->4*/ (unsigned char[]){ CTL|ALTGR,	0x1B	},	// ~
-/**->1->5*/ (unsigned char[]){ CTL,		0x13	},	// r
-/**->1->6*/ (unsigned char[]){ CTL,		0x2F	},	// v
-/**->1->7*/ (unsigned char[]){ CTL,		0x28	},	// ä
-/**->1->8*/ (unsigned char[]){ CTL,		0x20	},	// d
-/**->1->9*/ (unsigned char[]){ CTL,		0x10	},	// q
-/**->2->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->2->1*/ (unsigned char[]){ CTL,		0x1C	},	// Return
-/**->2->2*/ (unsigned char[]){ CTL,		0x03	},	// 2
-/**->2->3*/ (unsigned char[]){ CTL,		0x34	},	// .
-/**->2->4*/ (unsigned char[]){ QUAL,	Q_CTRL_L },	// Control_L
-/**->2->5*/ (unsigned char[]){ CTL,		KEY_GRAVE	},	// ^
-/**->2->6*/ (unsigned char[]){ CTL,		0x35	},	// -
-/**->2->7*/ (unsigned char[]){ CTL,		0x33	},	// ,
-/**->2->8*/ (unsigned char[]){ CTL,		0x27	},	// ö
-/**->2->9*/ (unsigned char[]){ CTL|SHIFT,	KEY_1	},	// !
-/**->3->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->3->1*/ (unsigned char[]){ CTL,		0x10	},	// q
-/**->3->2*/ (unsigned char[]){ CTL,		0x26	},	// l
-/**->3->3*/ (unsigned char[]){ CTL,		0x04	},	// 3
-/**->3->4*/ (unsigned char[]){ CTL|SHIFT,	0x03	},	// "
-/**->3->5*/ (unsigned char[]){ CTL,		0x32	},	// m
-/**->3->6*/ (unsigned char[]){ CTL,		0x56	},	// <
-/**->3->7*/ (unsigned char[]){ CTL,		0x0D	},	// '
-/**->3->8*/ (unsigned char[]){ CTL,		0x21	},	// f
-/**->3->9*/ (unsigned char[]){ CTL,		0x1A	},	// ü
-/**->4->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->4->1*/ (unsigned char[]){ CTL|SHIFT,	0x05	},	// $
-/**->4->2*/ (unsigned char[]){ CTL,		0x1E	},	// a
-/**->4->3*/ (unsigned char[]){ CTL,		KEY_Z	},	// y
-/**->4->4*/ (unsigned char[]){ CTL,		0x05	},	// 4
-/**->4->5*/ (unsigned char[]){ CTL,		0x12	},	// e
-/**->4->6*/ (unsigned char[]){ CTL,		0x25	},	// k
-/**->4->7*/ (unsigned char[]){ CTL|SHIFT,	0x06	},	// %
-/**->4->8*/ (unsigned char[]){ CTL,		0x1F	},	// s
-/**->4->9*/ (unsigned char[]){ CTL,		0x2D	},	// x
-/**->5->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->5->1*/ (unsigned char[]){ QUAL,	Q_SHFT_L },	// Shift_L
-/**->5->2*/ (unsigned char[]){ CTL|ALTGR,	0x0C	},	// \ FUCK GNU (gcc >2.95.4 broken)
-/**->5->3*/ (unsigned char[]){ CTL|SHIFT,	0x09	},	// (
-/**->5->4*/ (unsigned char[]){ CTL,		KEY_SPACE	},	// Space
-/**->5->5*/ (unsigned char[]){ CTL,		0x06	},	// 5
-/**->5->6*/ (unsigned char[]){ CTL,		0x0F	},	// Tabulator
-/**->5->7*/ (unsigned char[]){ QUAL,	Q_GUI_L },	// Gui_L
-/**->5->8*/ (unsigned char[]){ CTL|ALTGR,	0x09	},	// [
-/**->5->9*/ (unsigned char[]){ CTL|SHIFT,	0x0A	},	// )
-/**->6->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->6->1*/ (unsigned char[]){ CTL|SHIFT,	0x07	},	// &
-/**->6->2*/ (unsigned char[]){ CTL,		0x30	},	// b
-/**->6->3*/ (unsigned char[]){ CTL|SHIFT,	0x56	},	// >
-/**->6->4*/ (unsigned char[]){ CTL|SHIFT,	0x1B	},	// *
-/**->6->5*/ (unsigned char[]){ CTL,		0x18	},	// o
-/**->6->6*/ (unsigned char[]){ CTL,		0x07	},	// 6
-/**->6->7*/ (unsigned char[]){ CTL,		0x1B	},	// +
-/**->6->8*/ (unsigned char[]){ CTL,		0x16	},	// u
-/**->6->9*/ (unsigned char[]){ CTL|ALTGR,	0x08	},	// {
-/**->7->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->7->1*/ (unsigned char[]){ CTL,		0x0C	},	// ß
-/**->7->2*/ (unsigned char[]){ CTL,		0x23	},	// h
-/**->7->3*/ (unsigned char[]){ CTL|SHIFT,	0x0B	},	// =
-/**->7->4*/ (unsigned char[]){ CTL|SHIFT,	0x0C	},	// ?
-/**->7->5*/ (unsigned char[]){ CTL,		0x14	},	// t
-/**->7->6*/ (unsigned char[]){ CTL,		0x24	},	// j
-/**->7->7*/ (unsigned char[]){ CTL,		0x08	},	// 7
-/**->7->8*/ (unsigned char[]){ CTL,		KEY_N	},	// n
-/**->7->9*/ (unsigned char[]){ CTL,		KEY_Y	},	// z
-/**->8->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->8->1*/ (unsigned char[]){ CTL|SHIFT,	0x33	},	// ;
-/**->8->2*/ (unsigned char[]){ CTL|ALTGR,	0x10	},	// @
-/**->8->3*/ (unsigned char[]){ CTL|SHIFT,	0x34	},	// :
-/**->8->4*/ (unsigned char[]){ QUAL,	Q_ALT_L	},	// Alt_L
-/**->8->5*/ (unsigned char[]){ CTL|ALTGR,	0x0A	},	// ]
-/**->8->6*/ (unsigned char[]){ CTL|ALTGR,	0x56	},	// |
-/**->8->7*/ (unsigned char[]){ CTL,		0x0E	},	// BackSpace
-/**->8->8*/ (unsigned char[]){ CTL,		0x09	},	// 8
-/**->8->9*/ (unsigned char[]){ CTL,		0x01	},	// Escape
-/**->9->0*/ (unsigned char[]){ RESET,	0	},	// RESET
-/**->9->1*/ (unsigned char[]){ CTL,		0x2B	},	// #
-/**->9->2*/ (unsigned char[]){ CTL,		0x19	},	// p
-/**->9->3*/ (unsigned char[]){ CTL|SHIFT,	0x0D	},	// `
-/**->9->4*/ (unsigned char[]){ CTL|SHIFT,	0x35	},	// _
-/**->9->5*/ (unsigned char[]){ CTL,		0x22	},	// g
-/**->9->6*/ (unsigned char[]){ CTL|ALTGR,	0x0B	},	// }
-/**->9->7*/ (unsigned char[]){ CTL|SHIFT,	0x08	},	// /
-/**->9->8*/ (unsigned char[]){ CTL,		0x2E	},	// c
-/**->9->9*/ (unsigned char[]){ CTL,		0x0A	},	// 9
-
-/**->0->#*/ (unsigned char[]){ CTL,		0x6E	},	// INSERT
-/**->1->#*/ (unsigned char[]){ CTL,		0x6B	},	// END
-/**->2->#*/ (unsigned char[]){ CTL,		0x6C	},	// CURSOR-DOWN
-/**->3->#*/ (unsigned char[]){ CTL,		0x6D	},	// PAGE-DOWN
-/**->4->#*/ (unsigned char[]){ CTL,		0x69	},	// CURSOR-LEFT
-/**->5->#*/ (unsigned char[]){ CTL,		0x6F	},	// DELETE ( ,->5 )
-/**->6->#*/ (unsigned char[]){ CTL,		0x6A	},	// CURSOR-RIGHT
-/**->7->#*/ (unsigned char[]){ CTL,		0x66	},	// HOME
-/**->8->#*/ (unsigned char[]){ CTL,		0x67	},	// CURSOR-UP
-/**->9->#*/ (unsigned char[]){ CTL,		0x68	},	// PAGE-UP
-
-/**->0->0*/ (unsigned char[]){ CTL,		0x0B	},	// 0
-
-/**->USR1*/ (unsigned char[]){ QUAL,	Q_SHFT_L },	// Shift_L
-/**->USR2*/ (unsigned char[]){ QUAL,	Q_CTRL_L },	// Ctrl_L
-/**->USR3*/ (unsigned char[]){ QUAL,	Q_ALT_L },	// Alt_L
-/**->USR4*/ (unsigned char[]){ QUAL,	Q_GUI_L },	// Gui_L
-/**->USR5*/ (unsigned char[]){ QUAL,	Q_SHFT_R },	// Shift_R
-/**->USR6*/ (unsigned char[]){ QUAL,	Q_CTRL_R },	// Ctrl_R
-/**->USR7*/ (unsigned char[]){ QUAL,	Q_ALT_R },	// Alt_R
-/**->USR8*/ (unsigned char[]){ QUAL,	Q_GUI_R },	// Gui_R
-};
-
-
 //	*INDENT-ON*
+
+//
+//      Macro Table sequences to scancodes.
+//
+static unsigned char *AOHKMacroTable[10 * 10 + 1 + 8];
+
+//
+//      Macro Table quoted sequences to scancodes.
+//
+static unsigned char *AOHKMacroQuoteTable[10 * 10 + 1 + 8];
 
 int DebugLevel = 1;
 
@@ -1095,6 +637,7 @@ static void AOHKFirstKey(int key)
 
 	case OH_MACRO:			// macro key
 	    if (AOHKDownKeys & (1 << OH_REPEAT)) {	// game mode
+		// This directions didn't work good, better MACRO+REPEAT
 		AOHKEnterGameMode();
 		break;
 	    }
@@ -1123,8 +666,12 @@ static void AOHKFirstKey(int key)
 	    break;
 
 	case OH_REPEAT:		// repeat last sequence
+	    // MACRO -> REPEAT
+	    if (AOHKState == OHMacroFirstKey) {
+		AOHKEnterGameMode();
+		break;
+	    }
 	    if (AOHKDownKeys & (1 << OH_MACRO)) {	// game mode
-		// This directions didn't work good, better MACRO+REPEAT
 		AOHKEnterGameMode();
 		break;
 	    }
@@ -1240,15 +787,12 @@ void AOHKSecondKey(int key)
     const OHKey *sequence;
     int n;
 
+    //
+    //  Every not supported key, does a soft reset.
+    //
     if (key == OH_MACRO || key == OH_SPECIAL || (OH_USR_1 <= key && key <= OH_USR_8)) {	// oops
 	AOHKReset();
 	return;
-    }
-    // This allows pressing first key and quote together.
-    if (key == OH_QUOTE && AOHKState == OHSecondKey) {
-	AOHKState = OHQuoteSecondKey;
-	QuoteStateLedOn();
-	return;;
     }
     // OH_QUOTE ok
 
@@ -1269,6 +813,10 @@ void AOHKSecondKey(int key)
 	    // FIXME: string
 	    sequence = (const OHKey *)AOHKMacroTable[n];
 	    break;
+	case OHMacroQuoteSecondKey:
+	    // FIXME: string
+	    sequence = (const OHKey *)AOHKMacroQuoteTable[n];
+	    break;
 	case OHSuperSecondKey:
 	default:
 	    sequence = &AOHKSuperTable[n];
@@ -1277,7 +825,7 @@ void AOHKSecondKey(int key)
 
     // This allows pressing first key and quote together.
     if (sequence->Modifier == QUOTE) {
-	Debug(4, "FIXME: Not sure if required\n");
+	Debug(2, "Quote as second key\n");
 	AOHKState = OHQuoteSecondKey;
 	QuoteStateLedOn();
 	return;
@@ -1584,8 +1132,8 @@ void AOHKFeedTimeout(int which)
     //
     //  Timeout -> reset to intial state
     //
-    if (AOHKState != OHGameMode && AOHKState!= OHSoftOff
-	    && AOHKState != OHHardOff) {
+    if (AOHKState != OHGameMode && AOHKState != OHSoftOff
+	&& AOHKState != OHHardOff) {
 	// Long time: total reset
 	if (which >= AOHKTimeout * 10) {
 	    Debug(1, "Timeout long %d\n", which);
@@ -1661,16 +1209,21 @@ void AOHKResetMacroTable(void)
 
     for (idx = 0; idx < sizeof(AOHKMacroTable) / sizeof(*AOHKMacroTable);
 	++idx) {
-#if 0
-	extern void _end[];
 
-	if (AOHKMacroTable[idx] > _end) {
+	if (AOHKMacroTable[idx]) {
 	    free(AOHKMacroTable[idx]);
 	}
 	AOHKMacroTable[idx] = NULL;
-#endif
-	AOHKMacroTable[idx][0] = RESET;
-	AOHKMacroTable[idx][1] = KEY_RESERVED;
+    }
+
+    for (idx = 0;
+	idx < sizeof(AOHKMacroQuoteTable) / sizeof(*AOHKMacroQuoteTable);
+	++idx) {
+
+	if (AOHKMacroQuoteTable[idx]) {
+	    free(AOHKMacroQuoteTable[idx]);
+	}
+	AOHKMacroQuoteTable[idx] = NULL;
     }
 }
 
@@ -1716,7 +1269,7 @@ static const char* AOHKKey2String[128] = {
     "-",
     "=",
     "BackSpace",
-    "Tab",		// 0x0F
+    "Tab",
 
     "q",		// 0x10
     "w",
@@ -1790,7 +1343,7 @@ static const char* AOHKKey2String[128] = {
     "KP_3",
     "KP_0",
     "KP_Period",
-    "SYSRQ",
+    "0x54",
     "F13",
     "<",
     "F11",
@@ -2192,7 +1745,7 @@ static void AOHKParseConvert(char *line)
     //
     internal = AOHKString2Internal(line, l);
     if (internal == -1) {
-	Debug(5, "Key '%.*s' not found\n",l, line);
+	Debug(5, "Key '%.*s' not found\n", l, line);
 	return;
     }
 
@@ -2278,7 +1831,7 @@ static void AOHKParseOutput(char *line, OHKey * out)
     } else if (l) {
 	i = AOHKString2Key(line, l);
 	if (i == KEY_RESERVED) {	// Still not found giving up.
-	    Debug(5, "Key '%.*s' not found\n",l, line);
+	    Debug(5, "Key '%.*s' not found\n", l, line);
 	    return;
 	}
 	// Look if its a modifier
@@ -2457,6 +2010,9 @@ static void AOHKParseMapping(char *line)
     } else if (macro && super) {
 	Debug(5, "Macro + super not supported\n");
     } else if (macro) {
+	if (!AOHKMacroTable[internal]) {
+	    AOHKMacroTable[internal] = malloc(2);
+	}
 	AOHKParseOutput(s, (OHKey *) AOHKMacroTable[internal]);
     } else if (super) {
 	AOHKParseOutput(s, AOHKSuperTable + internal);
@@ -2556,5 +2112,552 @@ void AOHKLoadTable(const char *file)
 
     if (strcmp(file, "-")) {		// !stdin
 	fclose(fp);
+    }
+}
+
+//----------------------------------------------------------------------------
+//      Default Keymaps.
+//----------------------------------------------------------------------------
+
+//	*INDENT-OFF*
+
+//
+//	American keyboard layout default mapping.
+//
+static OHKey AOHKUsTable[10*10+1+8] = {
+/*10*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*11*/ { 0,		KEY_1	},	// 1
+/*12*/ { 0,		KEY_I	},	// i
+/*13*/ { 0,		KEY_W	},	// w
+/*14*/ { SHIFT,		KEY_GRAVE },	// ~
+/*15*/ { 0,		KEY_R	},	// r
+/*16*/ { 0,		KEY_V	},	// v
+/*17*/ { 0,		KEY_A	},	// NO: ä
+/*18*/ { 0,		KEY_D	},	// d
+/*19*/ { RESET,		KEY_RESERVED },	// (FREE)
+/*20*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*21*/ { 0,		KEY_ENTER },	// Return
+/*22*/ { 0,		KEY_2	},	// 2
+/*23*/ { 0,		KEY_DOT	},	// .
+/*24*/ { QUAL,		Q_CTRL_L },	// Control_L
+/*25*/ { SHIFT,		KEY_6 },	// ^
+/*26*/ { 0,		KEY_MINUS },	// -
+/*27*/ { 0,		KEY_COMMA },	// ,
+/*28*/ { 0,		KEY_O },	// NO: ö
+/*29*/ { SHIFT,		KEY_1	},	// !
+/*30*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*31*/ { 0,		KEY_Q	},	// q
+/*32*/ { 0,		KEY_L	},	// l
+/*33*/ { 0,		KEY_3	},	// 3
+/*34*/ { SHIFT,		KEY_APOSTROPHE },// "
+/*35*/ { 0,		KEY_M	},	// m
+/*36*/ { SHIFT,		KEY_COMMA },	// <
+/*37*/ { 0,		KEY_APOSTROPHE },// '
+/*38*/ { 0,		KEY_F	},	// f
+/*39*/ { 0,		KEY_U	},	// NO: ü
+/*40*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*41*/ { SHIFT,		KEY_4	},	// $
+/*42*/ { 0,		KEY_A	},	// a
+/*43*/ { 0,		KEY_Y	},	// y
+/*44*/ { 0,		KEY_4	},	// 4
+/*45*/ { 0,		KEY_E	},	// e
+/*46*/ { 0,		KEY_K	},	// k
+/*47*/ { SHIFT,		KEY_5	},	// %
+/*48*/ { 0,		KEY_S	},	// s
+/*49*/ { 0,		KEY_X	},	// x
+/*50*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*51*/ { QUAL,		Q_SHFT_L },	// Shift_L
+/*52*/ { 0,		KEY_BACKSLASH },// \ GNU idiotism
+/*53*/ { SHIFT,		KEY_9	},	// (
+/*54*/ { 0,		KEY_SPACE },	// Space
+/*55*/ { 0,		KEY_5	},	// 5
+/*56*/ { 0,		KEY_TAB	},	// Tabulator
+/*57*/ { QUAL,		Q_GUI_L },	// Gui_L
+/*58*/ { 0,		KEY_LEFTBRACE },// [
+/*59*/ { SHIFT,		KEY_0	},	// )
+/*60*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*61*/ { SHIFT,		KEY_7	},	// &
+/*62*/ { 0,		KEY_B	},	// b
+/*63*/ { SHIFT,		KEY_DOT },	// >
+/*64*/ { SHIFT,		KEY_8 },	// *
+/*65*/ { 0,		KEY_O	},	// o
+/*66*/ { 0,		KEY_6	},	// 6
+/*67*/ { SHIFT,		KEY_EQUAL },	// +
+/*68*/ { 0,		KEY_U	},	// u
+/*69*/ { SHIFT,		KEY_LEFTBRACE },// {
+/*70*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*71*/ { 0,		KEY_S },	// NO: ß
+/*72*/ { 0,		KEY_H	},	// h
+/*73*/ { 0,		KEY_EQUAL },	// =
+/*74*/ { SHIFT,		KEY_SLASH },	// ?
+/*75*/ { 0,		KEY_T	},	// t
+/*76*/ { 0,		KEY_J	},	// j
+/*77*/ { 0,		KEY_7	},	// 7
+/*78*/ { 0,		KEY_N	},	// n
+/*79*/ { 0,		KEY_Z	},	// z
+/*80*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*81*/ { 0,		KEY_SEMICOLON },// ;
+/*82*/ { SHIFT,		KEY_2	},	// @
+/*83*/ { SHIFT,		KEY_SEMICOLON },// :
+/*84*/ { QUAL,		Q_ALT_L	},	// Alt_L
+/*85*/ { 0,		KEY_RIGHTBRACE },// ]
+/*86*/ { SHIFT,		KEY_BACKSLASH },// |
+/*87*/ { 0,		KEY_BACKSPACE },// BackSpace
+/*88*/ { 0,		KEY_8	},	// 8
+/*89*/ { 0,		KEY_ESC	},	// Escape
+/*90*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*91*/ { SHIFT,		KEY_3	 },	// #
+/*92*/ { 0,		KEY_P	},	// p
+/*93*/ { 0,		KEY_GRAVE },	// `
+/*94*/ { SHIFT,		KEY_MINUS },	// _
+/*95*/ { 0,		KEY_G	},	// g
+/*96*/ { SHIFT,		KEY_RIGHTBRACE },// }
+/*97*/ { 0,		KEY_SLASH },	// /
+/*98*/ { 0,		KEY_C	},	// c
+/*99*/ { 0,		KEY_9	},	// 9
+
+/*0#*/ { 0,		KEY_INSERT },	// INSERT
+/*1#*/ { 0,		KEY_END	},	// END
+/*2#*/ { 0,		KEY_DOWN },	// CURSOR-DOWN
+/*3#*/ { 0,		KEY_PAGEDOWN },	// PAGE-DOWN
+/*4#*/ { 0,		KEY_LEFT },	// CURSOR-LEFT
+/*5#*/ { 0,		KEY_DELETE },	// DELETE ( ,->5 )
+/*6#*/ { 0,		KEY_RIGHT },	// CURSOR-RIGHT
+/*7#*/ { 0,		KEY_HOME },	// HOME
+/*8#*/ { 0,		KEY_UP	},	// CURSOR-UP
+/*9#*/ { 0,		KEY_PAGEUP },	// PAGE-UP
+
+/*00*/ { 0,		KEY_0	},	// 0
+
+/*USR1*/ { QUAL,	Q_SHFT_L },	// Shift_L
+/*USR2*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
+/*USR3*/ { QUAL,	Q_ALT_L },	// Alt_L
+/*USR4*/ { QUAL,	Q_GUI_L },	// Gui_L
+/*USR5*/ { QUAL,	Q_SHFT_R },	// Shift_R
+/*USR6*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
+/*USR7*/ { QUAL,	Q_ALT_R },	// Alt_R
+/*USR8*/ { QUAL,	Q_GUI_R },	// Gui_R
+
+// FIXME: Should I move game mode table to here?
+};
+
+//
+//	American keyboard layout default mapping.
+//
+static OHKey AOHKUsQuoteTable[10*10+1+8] = {
+/*010*/ { RESET,	KEY_RESERVED },	// RESET
+/*011*/ { 0,		KEY_F1	},	// F1
+/*012*/ { SHIFT,	KEY_I	},	// I
+/*013*/ { SHIFT,	KEY_W	},	// W
+/*014*/ { 0,		KEY_NUMLOCK },	// NUM-LOCK
+/*015*/ { SHIFT,	KEY_R	},	// R
+/*016*/ { SHIFT,	KEY_V	},	// V
+/*017*/ { SHIFT,	KEY_A	},	// NO: Ä
+/*018*/ { SHIFT,	KEY_D	},	// D
+/*019*/ { RESET,	KEY_RESERVED },	// (FREE)
+/*020*/ { RESET,	KEY_RESERVED },	// RESET
+/*021*/ { 0,		KEY_KPENTER },	// KP-ENTER
+/*022*/ { 0,		KEY_F2	},	// F2
+/*023*/ { 0,		KEY_KPDOT },	// KP-.
+/*024*/ { QUAL,		Q_CTRL_R },	// Control_R
+/*025*/ { 0,		KEY_CAPSLOCK },	// CAPS-LOCK
+/*026*/ { 0,		KEY_KPMINUS },	// KP--
+/*027*/ { 0,		KEY_KPDOT },	// KP-,
+/*028*/ { SHIFT,	KEY_O	},	// NO: Ö
+/*029*/ { 0,		KEY_KP0	},	// KP-0 (!no better place found)
+/*030*/ { RESET,	KEY_RESERVED },	// RESET
+/*031*/ { SHIFT,	KEY_Q	},	// Q
+/*032*/ { SHIFT,	KEY_L	},	// L
+/*033*/ { 0,		KEY_F3	},	// F3
+/*034*/ { 0,		KEY_8	},	// NO: §
+/*035*/ { SHIFT,	KEY_M	},	// M
+/*036*/ { 0,		KEY_SCROLLLOCK },// SCROLL-LOCK
+/*037*/ { 0,		KEY_APOSTROPHE },// ' (SHIFT #, doubled)
+/*038*/ { SHIFT,	KEY_F	},	// F
+/*039*/ { SHIFT,	KEY_U	},	// Ü
+/*040*/ { RESET,	KEY_RESERVED },	// RESET
+/*041*/ { 0,		KEY_0 },	// NO: °
+/*042*/ { SHIFT,	KEY_A	},	// A
+/*043*/ { SHIFT,	KEY_Y	},	// Y
+/*044*/ { 0,		KEY_F4	},	// F4
+/*045*/ { SHIFT,	KEY_E	},	// E
+/*046*/ { SHIFT,	KEY_K	},	// K
+/*047*/ { 0,		KEY_KPSLASH },	// KP-% (doubled)
+/*048*/ { SHIFT,	KEY_S	},	// S
+/*049*/ { SHIFT,	KEY_X	},	// X
+/*050*/ { RESET,	KEY_RESERVED },	// RESET
+/*051*/ { QUAL,		Q_SHFT_R },	// Shift_R
+/*052*/ { SHIFT,	KEY_BACKSLASH},	// | (QUOTE \, doubled)
+/*053*/ { SHIFT,	KEY_9	},	// ( (FREE)
+/*054*/ { SHIFT,	KEY_SPACE },	// SHIFT Space
+/*055*/ { 0,		KEY_F5	},	// F5
+/*056*/ { SHIFT,	KEY_TAB	},	// SHIFT Tabulator
+/*057*/ { QUAL,		Q_GUI_R },	// Gui_R
+/*058*/ { SHIFT,	KEY_LEFTBRACE },// { (QUOTE [, doubled)
+/*059*/ { SHIFT,	KEY_0	},	// ) (FREE)
+/*060*/ { RESET,	KEY_RESERVED },	// RESET
+/*061*/ { SHIFT,	KEY_E	},	// NO: ¤
+/*062*/ { SHIFT,	KEY_B	},	// B
+/*063*/ { SHIFT,	KEY_C	},	// NO: ¢
+/*064*/ { 0,		KEY_KPASTERISK },// KP-*
+/*065*/ { SHIFT,	KEY_O	},	// O
+/*066*/ { 0,		KEY_F6	},	// F6
+/*067*/ { 0,		KEY_KPPLUS },	// KP-+
+/*068*/ { SHIFT,	KEY_U	},	// U
+/*069*/ { SHIFT,	KEY_RIGHTBRACE},// { (FREE)
+/*070*/ { RESET,	KEY_RESERVED },	// RESET
+/*071*/ { 0,		KEY_SYSRQ },	// PRINT/SYSRQ
+/*072*/ { SHIFT,	KEY_H	},	// H
+/*073*/ { 0,		KEY_F10	},	// F10
+/*074*/ { 0,		KEY_F11	},	// F11
+/*075*/ { SHIFT,	KEY_T	},	// T
+/*076*/ { SHIFT,	KEY_J	},	// J
+/*077*/ { 0,		KEY_F7	},	// F7
+/*078*/ { SHIFT,	KEY_N	},	// N
+/*079*/ { SHIFT,	KEY_Z	},	// Z
+/*080*/ { RESET,	KEY_RESERVED },	// RESET
+/*081*/ { 0,		KEY_PAUSE },	// PAUSE
+/*082*/ { 0,		KEY_GRAVE },	// ` (QUOTE @, doubled)
+/*083*/ { CTL,		KEY_PAUSE },	// BREAK
+/*084*/ { QUAL,		Q_ALT_R	},	// Alt_R
+/*085*/ { SHIFT,	KEY_RIGHTBRACE },// } (QUOTE ], doubled)
+/*086*/ { ALT,		KEY_SYSRQ },	// SYSRQ
+/*087*/ { SHIFT,	KEY_BACKSPACE },// SHIFT BackSpace
+/*088*/ { 0,		KEY_F8	},	// F8
+/*089*/ { SHIFT,	KEY_ESC	},	// SHIFT Escape
+/*090*/ { RESET,	KEY_RESERVED },	// RESET
+/*091*/ { 0,		KEY_COMPOSE },	// MENU
+/*092*/ { SHIFT,	KEY_P	},	// P
+/*093*/ { 0,		KEY_F12	},	// F12
+/*094*/ { 0,		KEY_RESERVED },	// (FREE)
+/*095*/ { SHIFT,	KEY_G	},	// G
+/*096*/ { SPECIAL,	KEY_RESERVED },	// ENTER SPECIAL MODE
+/*097*/ { 0,		KEY_KPSLASH },	// KP-/
+/*098*/ { SHIFT,	KEY_C	},	// C
+/*099*/ { 0,		KEY_F9	},	// F9
+
+/*00#*/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
+/*01#*/ { 0,		KEY_KP1	},	// KP-1
+/*02#*/ { 0,		KEY_KP2	},	// KP-2
+/*03#*/ { 0,		KEY_KP3	},	// KP-3
+/*04#*/ { 0,		KEY_KP4	},	// KP-4
+/*05#*/ { 0,		KEY_KP5 },	// KP-5
+/*06#*/ { 0,		KEY_KP6	},	// KP-6
+/*07#*/ { 0,		KEY_KP7	},	// KP-7
+/*08#*/ { 0,		KEY_KP8	},	// KP-8
+/*09#*/ { 0,		KEY_KP9	},	// KP-9
+
+/*000*/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
+
+/*0USR1*/ { QUAL,	Q_SHFT_R },	// Shift_R
+/*0USR2*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
+/*0USR3*/ { QUAL,	Q_ALT_R },	// Alt_R
+/*0USR4*/ { QUAL,	Q_GUI_R },	// Gui_R
+/*0USR5*/ { QUAL,	Q_SHFT_L },	// Shift_L
+/*0USR6*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
+/*0USR7*/ { QUAL,	Q_ALT_L },	// Alt_L
+/*0USR8*/ { QUAL,	Q_GUI_L },	// Gui_L
+};
+
+//
+//	German keyboard layout default mapping.
+//
+static OHKey AOHKDeTable[10*10+1+8] = {
+/*10*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*11*/ { 0,		KEY_1	},	// 1
+/*12*/ { 0,		KEY_I	},	// i
+/*13*/ { 0,		KEY_W	},	// w
+/*14*/ { ALTGR,		KEY_RIGHTBRACE },// ~
+/*15*/ { 0,		KEY_R	},	// r
+/*16*/ { 0,		KEY_V	},	// v
+/*17*/ { 0,		KEY_APOSTROPHE },// ä
+/*18*/ { 0,		KEY_D	},	// d
+/*19*/ { RESET,		KEY_RESERVED },	// (FREE)
+/*20*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*21*/ { 0,		KEY_ENTER },	// Return
+/*22*/ { 0,		KEY_2	},	// 2
+/*23*/ { 0,		KEY_DOT	},	// .
+/*24*/ { QUAL,		Q_CTRL_L },	// Control_L
+/*25*/ { 0,		KEY_GRAVE },	// ^
+/*26*/ { 0,		KEY_SLASH },	// -
+/*27*/ { 0,		KEY_COMMA },	// ,
+/*28*/ { 0,		KEY_SEMICOLON },// ö
+/*29*/ { SHIFT,		KEY_1	},	// !
+/*30*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*31*/ { 0,		KEY_Q	},	// q
+/*32*/ { 0,		KEY_L	},	// l
+/*33*/ { 0,		KEY_3	},	// 3
+/*34*/ { SHIFT,		KEY_2	},	// "
+/*35*/ { 0,		KEY_M	},	// m
+/*36*/ { 0,		KEY_102ND },	// <
+/*37*/ { 0,		KEY_EQUAL },	// '
+/*38*/ { 0,		KEY_F	},	// f
+/*39*/ { 0,		KEY_LEFTBRACE },// ü
+/*40*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*41*/ { SHIFT,		KEY_4	},	// $
+/*42*/ { 0,		KEY_A	},	// a
+/*43*/ { 0,		KEY_Z	},	// y
+/*44*/ { 0,		KEY_4	},	// 4
+/*45*/ { 0,		KEY_E	},	// e
+/*46*/ { 0,		KEY_K	},	// k
+/*47*/ { SHIFT,		KEY_5	},	// %
+/*48*/ { 0,		KEY_S	},	// s
+/*49*/ { 0,		KEY_X	},	// x
+/*50*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*51*/ { QUAL,		Q_SHFT_L },	// Shift_L
+/*52*/ { ALTGR,		KEY_MINUS },	// \ FUCK GNU (gcc >2.95.4 broken)
+/*53*/ { SHIFT,		KEY_8	},	// (
+/*54*/ { 0,		KEY_SPACE },	// Space
+/*55*/ { 0,		KEY_5	},	// 5
+/*56*/ { 0,		KEY_TAB	},	// Tabulator
+/*57*/ { QUAL,		Q_GUI_L },	// Gui_L
+/*58*/ { ALTGR,		KEY_8	},	// [
+/*59*/ { SHIFT,		KEY_9	},	// )
+/*60*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*61*/ { SHIFT,		KEY_6	},	// &
+/*62*/ { 0,		KEY_B	},	// b
+/*63*/ { SHIFT,		KEY_102ND },	// >
+/*64*/ { SHIFT,		KEY_RIGHTBRACE },// *
+/*65*/ { 0,		KEY_O	},	// o
+/*66*/ { 0,		KEY_6	},	// 6
+/*67*/ { 0,		KEY_RIGHTBRACE },// +
+/*68*/ { 0,		KEY_U	},	// u
+/*69*/ { ALTGR,		KEY_7	},	// {
+/*70*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*71*/ { 0,		KEY_MINUS },	// ß
+/*72*/ { 0,		KEY_H	},	// h
+/*73*/ { SHIFT,		KEY_0	},	// =
+/*74*/ { SHIFT,		KEY_MINUS },	// ?
+/*75*/ { 0,		KEY_T	},	// t
+/*76*/ { 0,		KEY_J	},	// j
+/*77*/ { 0,		KEY_7	},	// 7
+/*78*/ { 0,		KEY_N	},	// n
+/*79*/ { 0,		KEY_Y	},	// z
+/*80*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*81*/ { SHIFT,		KEY_COMMA },	// ;
+/*82*/ { ALTGR,		KEY_Q	},	// @
+/*83*/ { SHIFT,		KEY_DOT	},	// :
+/*84*/ { QUAL,		Q_ALT_L	},	// Alt_L
+/*85*/ { ALTGR,		KEY_9	},	// ]
+/*86*/ { ALTGR,		KEY_102ND },	// |
+/*87*/ { 0,		KEY_BACKSPACE },// BackSpace
+/*88*/ { 0,		KEY_8	},	// 8
+/*89*/ { 0,		KEY_ESC	},	// Escape
+/*90*/ { QUOTE,		KEY_RESERVED },	// QUOTE
+/*91*/ { 0,		KEY_BACKSLASH },// #
+/*92*/ { 0,		KEY_P	},	// p
+/*93*/ { SHIFT,		KEY_EQUAL },	// `
+/*94*/ { SHIFT,		KEY_SLASH },	// _
+/*95*/ { 0,		KEY_G	},	// g
+/*96*/ { ALTGR,		KEY_0	},	// }
+/*97*/ { SHIFT,		KEY_7	},	// /
+/*98*/ { 0,		KEY_C	},	// c
+/*99*/ { 0,		KEY_9	},	// 9
+
+/*0#*/ { 0,		KEY_INSERT },	// INSERT
+/*1#*/ { 0,		KEY_END	},	// END
+/*2#*/ { 0,		KEY_DOWN },	// CURSOR-DOWN
+/*3#*/ { 0,		KEY_PAGEDOWN },	// PAGE-DOWN
+/*4#*/ { 0,		KEY_LEFT },	// CURSOR-LEFT
+/*5#*/ { 0,		KEY_DELETE },	// DELETE ( ,->5 )
+/*6#*/ { 0,		KEY_RIGHT },	// CURSOR-RIGHT
+/*7#*/ { 0,		KEY_HOME },	// HOME
+/*8#*/ { 0,		KEY_UP	},	// CURSOR-UP
+/*9#*/ { 0,		KEY_PAGEUP },	// PAGE-UP
+
+/*00*/ { 0,		KEY_0	},	// 0
+
+/*USR1*/ { QUAL,	Q_SHFT_L },	// Shift_L
+/*USR2*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
+/*USR3*/ { QUAL,	Q_ALT_L },	// Alt_L
+/*USR4*/ { QUAL,	Q_GUI_L },	// Gui_L
+/*USR5*/ { QUAL,	Q_SHFT_R },	// Shift_R
+/*USR6*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
+/*USR7*/ { QUAL,	Q_ALT_R },	// Alt_R
+/*USR8*/ { QUAL,	Q_GUI_R },	// Gui_R
+
+// FIXME: Should I move game mode table to here?
+};
+
+//
+//	German keyboard layout default mapping.
+//
+static OHKey AOHKDeQuoteTable[10*10+1+8] = {
+/*010*/ { RESET,	KEY_RESERVED },	// RESET
+/*011*/ { 0,		KEY_F1	},	// F1
+/*012*/ { SHIFT,	KEY_I	},	// I
+/*013*/ { SHIFT,	KEY_W	},	// W
+/*014*/ { 0,		KEY_NUMLOCK },	// NUM-LOCK
+/*015*/ { SHIFT,	KEY_R	},	// R
+/*016*/ { SHIFT,	KEY_V	},	// V
+/*017*/ { SHIFT,	KEY_APOSTROPHE },// Ä
+/*018*/ { SHIFT,	KEY_D	},	// D
+/*019*/ { RESET,	KEY_RESERVED },	// (FREE)
+/*020*/ { RESET,	KEY_RESERVED },	// RESET
+/*021*/ { 0,		KEY_KPENTER },	// KP-ENTER
+/*022*/ { 0,		KEY_F2	},	// F2
+/*023*/ { 0,		KEY_KPDOT },	// KP-.
+/*024*/ { QUAL,		Q_CTRL_R },	// Control_R
+/*025*/ { 0,		KEY_CAPSLOCK },	// CAPS-LOCK
+/*026*/ { 0,		KEY_KPMINUS },	// KP--
+/*027*/ { 0,		KEY_KPDOT },	// KP-,
+/*028*/ { SHIFT,	KEY_SEMICOLON },// Ö
+/*029*/ { 0,		KEY_KP0	},	// KP-0 (!no better place found)
+/*030*/ { RESET,	KEY_RESERVED },	// RESET
+/*031*/ { SHIFT,	KEY_Q	},	// Q
+/*032*/ { SHIFT,	KEY_L	},	// L
+/*033*/ { 0,		KEY_F3	},	// F3
+/*034*/ { SHIFT,	KEY_3	},	// §
+/*035*/ { SHIFT,	KEY_M	},	// M
+/*036*/ { 0,		KEY_SCROLLLOCK },// SCROLL-LOCK
+/*037*/ { 0,		KEY_BACKSLASH },// ' (SHIFT #, doubled)
+/*038*/ { SHIFT,	KEY_F	},	// F
+/*039*/ { SHIFT,	KEY_LEFTBRACE },// Ü
+/*040*/ { RESET,	KEY_RESERVED },	// RESET
+/*041*/ { SHIFT,	KEY_GRAVE },	// °
+/*042*/ { SHIFT,	KEY_A	},	// A
+/*043*/ { SHIFT,	KEY_Z	},	// Y
+/*044*/ { 0,		KEY_F4	},	// F4
+/*045*/ { SHIFT,	KEY_E	},	// E
+/*046*/ { SHIFT,	KEY_K	},	// K
+/*047*/ { 0,		KEY_KPSLASH },	// KP-% (doubled)
+/*048*/ { SHIFT,	KEY_S	},	// S
+/*049*/ { SHIFT,	KEY_X	},	// X
+/*050*/ { RESET,	KEY_RESERVED },	// RESET
+/*051*/ { QUAL,		Q_SHFT_R },	// Shift_R
+/*052*/ { ALTGR,	KEY_102ND },	// | (QUOTE \, doubled)
+/*053*/ { SHIFT,	KEY_8	},	// ( (FREE)
+/*054*/ { SHIFT,	KEY_SPACE },	// SHIFT Space
+/*055*/ { 0,		KEY_F5	},	// F5
+/*056*/ { SHIFT,	KEY_TAB	},	// SHIFT Tabulator
+/*057*/ { QUAL,		Q_GUI_R },	// Gui_R
+/*058*/ { ALTGR,	KEY_6	},	// { (QUOTE [, doubled)
+/*059*/ { SHIFT,	KEY_9	},	// ) (FREE)
+/*060*/ { RESET,	KEY_RESERVED },	// RESET
+/*061*/ { ALTGR,	KEY_E	},	// ¤
+/*062*/ { SHIFT,	KEY_B	},	// B
+/*063*/ { ALTGR,	KEY_C	},	// ¢
+/*064*/ { 0,		KEY_KPASTERISK },// KP-*
+/*065*/ { SHIFT,	KEY_O	},	// O
+/*066*/ { 0,		KEY_F6	},	// F6
+/*067*/ { 0,		KEY_KPPLUS },	// KP-+
+/*068*/ { SHIFT,	KEY_U	},	// U
+/*069*/ { ALTGR,	KEY_7	},	// { (FREE)
+/*070*/ { RESET,	KEY_RESERVED },	// RESET
+/*071*/ { 0,		KEY_SYSRQ },	// PRINT/SYSRQ
+/*072*/ { SHIFT,	KEY_H	},	// H
+/*073*/ { 0,		KEY_F10	},	// F10
+/*074*/ { 0,		KEY_F11	},	// F11
+/*075*/ { SHIFT,	KEY_T	},	// T
+/*076*/ { SHIFT,	KEY_J	},	// J
+/*077*/ { 0,		KEY_F7	},	// F7
+/*078*/ { SHIFT,	KEY_N	},	// N
+/*079*/ { SHIFT,	KEY_Y	},	// Z
+/*080*/ { RESET,	KEY_RESERVED },	// RESET
+/*081*/ { 0,		KEY_PAUSE },	// PAUSE
+/*082*/ { SHIFT,	KEY_EQUAL },	// ` (QUOTE @, doubled)
+/*083*/ { CTL,		KEY_PAUSE },	// BREAK
+/*084*/ { QUAL,		Q_ALT_R	},	// Alt_R
+/*085*/ { ALTGR,	KEY_0	},	// } (QUOTE ], doubled)
+/*086*/ { ALT,		KEY_SYSRQ },	// SYSRQ
+/*087*/ { SHIFT,	KEY_BACKSPACE },// SHIFT BackSpace
+/*088*/ { 0,		KEY_F8	},	// F8
+/*089*/ { SHIFT,	KEY_ESC	},	// SHIFT Escape
+/*090*/ { RESET,	KEY_RESERVED },	// RESET
+/*091*/ { 0,		KEY_COMPOSE },	// MENU
+/*092*/ { SHIFT,	KEY_P	},	// P
+/*093*/ { 0,		KEY_F12	},	// F12
+/*094*/ { 0,		KEY_RESERVED },	// (FREE)
+/*095*/ { SHIFT,	KEY_G	},	// G
+/*096*/ { SPECIAL,	KEY_RESERVED },	// ENTER SPECIAL MODE
+/*097*/ { 0,		KEY_KPSLASH },	// KP-/
+/*098*/ { SHIFT,	KEY_C	},	// C
+/*099*/ { 0,		KEY_F9	},	// F9
+
+/*00#*/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
+/*01#*/ { 0,		KEY_KP1	},	// KP-1
+/*02#*/ { 0,		KEY_KP2	},	// KP-2
+/*03#*/ { 0,		KEY_KP3	},	// KP-3
+/*04#*/ { 0,		KEY_KP4	},	// KP-4
+/*05#*/ { 0,		KEY_KP5 },	// KP-5
+/*06#*/ { 0,		KEY_KP6	},	// KP-6
+/*07#*/ { 0,		KEY_KP7	},	// KP-7
+/*08#*/ { 0,		KEY_KP8	},	// KP-8
+/*09#*/ { 0,		KEY_KP9	},	// KP-9
+
+/*000*/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
+
+/*0USR1*/ { QUAL,	Q_SHFT_R },	// Shift_R
+/*0USR2*/ { QUAL,	Q_CTRL_R },	// Ctrl_R
+/*0USR3*/ { QUAL,	Q_ALT_R },	// Alt_R
+/*0USR4*/ { QUAL,	Q_GUI_R },	// Gui_R
+/*0USR5*/ { QUAL,	Q_SHFT_L },	// Shift_L
+/*0USR6*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
+/*0USR7*/ { QUAL,	Q_ALT_L },	// Alt_L
+/*0USR8*/ { QUAL,	Q_GUI_L },	// Gui_L
+};
+
+//	*INDENT-ON*
+
+//
+//      Setup compiled keyboard mappings.
+//
+void AOHKSetLanguage(const char *lang)
+{
+    unsigned i;
+    unsigned char *s;
+
+    Debug(2, "Set Language '%s'\n", lang);
+    if (!strcmp("de", lang)) {
+	memcpy(AOHKTable, AOHKDeTable, sizeof(AOHKTable));
+	memcpy(AOHKQuoteTable, AOHKDeQuoteTable, sizeof(AOHKQuoteTable));
+    } else if (!strcmp("us", lang)) {
+	memcpy(AOHKTable, AOHKUsTable, sizeof(AOHKTable));
+	memcpy(AOHKQuoteTable, AOHKUsQuoteTable, sizeof(AOHKQuoteTable));
+    } else {
+	Debug(5, "Language '%s' isn't suported\n", lang);
+	return;
+    }
+
+    //
+    //  Convert Normal table into macro table. Adding Ctrl
+    //
+    for (i = 0; i < sizeof(AOHKTable) / sizeof(*AOHKTable); ++i) {
+	s = malloc(2);
+	switch (AOHKTable[i].Modifier) {
+	    case RESET:
+	    case QUOTE:
+	    case QUAL:
+	    case STICKY:
+	    case TOGAME:
+	    case SPECIAL:
+		s[0] = AOHKTable[i].Modifier;
+		break;
+	    default:
+		s[0] = AOHKTable[i].Modifier ^ CTL;
+		break;
+	}
+	s[1] = AOHKTable[i].KeyCode;
+	AOHKMacroTable[i] = s;
+    }
+    //
+    //  Convert Normal table into super quote table. Adding Alt
+    //
+    for (i = 0; i < sizeof(AOHKTable) / sizeof(*AOHKTable); ++i) {
+	s = (unsigned char *)&AOHKSuperTable[i];
+	switch (AOHKTable[i].Modifier) {
+	    case RESET:
+	    case QUOTE:
+	    case QUAL:
+	    case STICKY:
+	    case TOGAME:
+	    case SPECIAL:
+		s[0] = AOHKTable[i].Modifier;
+		break;
+	    default:
+		s[0] = AOHKTable[i].Modifier ^ ALT;
+		break;
+	}
+	s[1] = AOHKTable[i].KeyCode;
     }
 }
