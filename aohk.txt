@@ -106,6 +106,11 @@ Pressing QUOTE (0) and MACRO (*) together acts as normal Quote+CTRL.
 MACRO + REPEAT: * + #
 ---------------------
 Pressing MACRO (*) and Repeat (#) together switches to game mode.
+Currently also pressing MACRO followed by REPEAT is supported.
+
+MACRO, MACRO: **
+----------------
+Pressing MACRO (*) followed by a second MACRO (*) switches to number mode.
 
 1 s pause
 ---------
@@ -138,22 +143,33 @@ presses while scrolling.
 -----------------------------------------------------------------------------
 Game-mode:
 
-Entered by pressing the MACRO key (.) and the repeat key (#) together.
+Entered by pressing the MACRO key (*) and the REPEAT key (#) together.
 
 All keys are direct mapped to a single key.  It is useful for playing
-games, where it is important you can react fast.  There is no difference
-for the left and rotated mode.
+games, where it is important you can react fast.
 
-Holding down the quote key (0), while pressing a second key, activates the
+Holding down the QUOTE key (0), while pressing a second key, activates the
 second set.  This way you have 33 direct mapped keys available.  One should
-always mapped to, return to normal mode.
+always mapped to 'return to normal mode'.
 
 The default mapping is:
     1  2  3  4  |   5  6  7  8
     q  w  e  r  |   t  z  u  i
     a  s  d     |   f  g  h 
     y  x  c     |   v  b  n
- CTRL ALT SPACE | NOR TAB ---
+ CTRL ALT SPACE | RST TAB ---
+
+RST: Return to normal mode.
+
+-----------------------------------------------------------------------------
+Number-mode:
+
+Entered by pressing the MACRO key (*) followed by the MACRO key (*).
+
+All keys are direct mapped to a single key.  This is useful to enter many
+numbers.  The input device acts like a normal number pad.
+
+Pressing the special key returns to normal-mode.
 
 #############################################################################
 #############################################################################
@@ -211,6 +227,7 @@ Rotated left hand:		|
 -----------------------------------------------------------------------------
 
 All the following codes are based on the right hand mode:
+
         *	= KEYPAD-. => Macro = Ctrl-Quote
 	0	= KEYPAD-0 => Quote
 	1 - 9	= KEYPAD-1 ... KEYPAD-9
@@ -308,16 +325,18 @@ Notes:
 Special-Commands:
     QUOTE + REPEAT		Must be pressed together, is super quote.
     MACRO + REPEAT		Must be pressed together, enter game-mode.
-    SPECIAL + QUOTE		Not needed: use ioctl. Toggle left-right hand
-    SPECIAL + SPECIAL 		Turn off (next SPECIAL re enables)
-    SPECIAL + REPEAT		Toggle use of right-cursor
-    SPECIAL + 1			Toggle only me mode. Normal keyboard disabled
-    SPECIAL + 2			Double timeout
-    SPECIAL + 3			Half timeout
-    SPECIAL + 5			Exit program / turn off
-    SPECIAL + 6			Game mode
-    SPECIAL + 9			Turn off (re enable not possible)
-    SPECIAL + 4,8,MACRO		Free to assign
+    MACRO, MACRO		Enter number-mode.
+    SPECIAL, QUOTE		Not needed: use ioctl. Toggle left-right hand
+    SPECIAL, SPECIAL 		Turn off (next SPECIAL re enables)
+    SPECIAL, REPEAT		Toggle use of right-cursor
+    SPECIAL, 1			Toggle only me mode. Normal keyboard disabled
+    SPECIAL, 2			Double timeout
+    SPECIAL, 3			Half timeout
+    SPECIAL, 5			Exit program / turn off
+    SPECIAL, 6			Game mode
+    SPECIAL, 7			Number mode
+    SPECIAL, 9			Turn off (re enable not possible)
+    SPECIAL, 4 or 8 or MACRO	Free to assign
 
 -----------------------------------------------------------------------------
 Table sorted by start key: (incomplete)
@@ -357,6 +376,8 @@ Table sorted by start key: (incomplete)
 `----~----~----~----' `----~----~----~----' `----~----~----~----'
 
 
+Labels for the key caps
+
 .---------v---------v---------.  .--..-..--.
 | 7  n  z |BSP 8 ESC| /  c  9 |  > 7  8  9 <
 | ?  t  j |ALT ]  | | _  g  } |  > 4  5  6 <
@@ -366,10 +387,10 @@ Table sorted by start key: (incomplete)
 | 4  e  k |SPC 5 TAB| *  o  6 |
 | $  a  y |SFT \  ( | &  b  > |
 }---------+---------+---------{
-| ä  d  q | ,  ö  ! | '  f  ü | HOM CUP PUP
-| ~  r  v |CRL ^  - | "  m  < | CLE DEL CRI
-| 1  i  w |RET 2  . | q  l  3 | END CDN PDN
-`---------~---------~---------' INS
+| ä  d    | ,  ö  ! | '  f  ü |  HOM CUP PUP
+| ~  r  v |CTL ^  - | "  m  < |  CLE DEL CRI
+| 1  i  w |RET 2  . | q  l  3 |  END CDN PDN
+`---------~---------~---------'  INS
 
 .------------v
 | F7   N   Z |
@@ -387,7 +408,7 @@ Table sorted by code:
 00	0		-not possible-
 01x-09x	Needs an extra key-press
 0#	[INS]		-not possible-
-10	----- RESET -----
+10	----- QUOTE/RESET -----
 11	1		F1
 12	i		I
 13	w		W
@@ -396,9 +417,9 @@ Table sorted by code:
 16	v		V
 17	ä		Ä
 18	d		D
-19	q		Q
+19	(FREE)		(FREE)
 1#	[END]		KEYPAD-1
-20	----- RESET -----
+20	----- QUOTE/RESET -----
 21	[RET]		KEYPAD-ENTER
 22	2		F2
 23	.		KEYPAD-. (double use)
@@ -409,7 +430,7 @@ Table sorted by code:
 28	ö		Ö
 29	!		KEYPAD-0
 2#	[CRSR-DOWN]	KEYPAD-2
-30	----- RESET -----
+30	----- QUOTE/RESET -----
 31	q		Q
 32	l		L
 33	3		F3
@@ -420,7 +441,7 @@ Table sorted by code:
 38	f		F
 39	ü		Ü
 3#	[PAGE-DOWN]	KEYPAD-3
-40	----- RESET -----
+40	----- QUOTE/RESET -----
 41	$		°
 42	a		A
 43	y		Y
@@ -431,7 +452,7 @@ Table sorted by code:
 48	s		S
 49	x		X
 4#	[CRSR-LEFT]	KEYPAD-4
-50	----- RESET -----
+50	----- QUOTE/RESET -----
 51	[SHIFT]		Right-[SHIFT]
 52	\ 		|
 53	(		-free-
@@ -442,7 +463,7 @@ Table sorted by code:
 58	[		}
 59	)		-free-
 5#	[DELETE]	SHIFT-[DEL]
-60	----- RESET -----
+60	----- QUOTE/RESET -----
 61	&		¤
 62	b		B
 63	>		¢
@@ -453,7 +474,7 @@ Table sorted by code:
 68	u		U
 69	{		-free-
 6#	[CRSR-RIGHT]	KEYPAD-6
-70	----- RESET -----
+70	----- QUOTE/RESET -----
 71	ß		PRINT
 72	h		H
 73	=		F10
@@ -464,7 +485,7 @@ Table sorted by code:
 78	n		N
 79	z		Z
 7#	[HOME]		KEYPAD-7
-80	----- RESET -----
+80	----- QUOTE/RESET -----
 81	;		PAUSE
 82	@		` (double use)
 83	:		BREAK
@@ -475,11 +496,11 @@ Table sorted by code:
 88	8		F8
 89	[ESC]		SHIFT-[ESC]
 8#	[CRSR-DOWN]	KEYPAD-2
-90	----- RESET -----
+90	----- QUOTE/RESET -----
 91	#		MENU
 92	p		P
 93	`		F12
-94	_		DEL (0127, double use)
+94	_		-free-
 95	g		G
 96	}		-free-
 97	/		KEYPAD-/

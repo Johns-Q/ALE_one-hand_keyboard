@@ -49,7 +49,8 @@ enum
     OHMacroQuoteFirstKey,		// have macro key, ...
     OHMacroQuoteSecondKey,		// macro key, first key ...
 
-    OHGameMode,				// gamemode: key = key
+    OHGameMode,				// game mode: key = key
+    OHNumberMode,			// number mode: key = number key
     OHSpecial,				// have seen the special key
     OHSoftOff,				// turned off
     OHHardOff				// 100% turned off
@@ -103,7 +104,8 @@ static unsigned char AOHKConvertTable[256];
 #define QUOTE	130			// quote state
 #define RESET	131			// reset state
 #define TOGAME	132			// enter game mode
-#define SPECIAL	133			// enter special mode
+#define TONUM	133			// enter number mode
+#define SPECIAL	134			// enter special mode
 
 //
 //      Modifier bitmap
@@ -136,40 +138,45 @@ static unsigned long AOHKLastJiffies;	// last key jiffy
 //#define QuoteStateLedOff()            // led not used, only troubles
 //#define GameModeLedOn()               // led not used, only troubles
 //#define GameModeLedOff()              // led not used, only troubles
+#define NumberModeLedOn()		// led not used, only troubles
+#define NumberModeLedOff()		// led not used, only troubles
 #define SpecialStateLedOn()		// led not used, only troubles
 #define SpecialStateLedOff()		// led not used, only troubles
 
+static void AOHKEnterGameMode(void);	// forward definition
+static void AOHKEnterNumberMode(void);	// forward definition
+
 //	*INDENT-OFF*
 
-/*
-**	Table sequences to scancodes.
-**		The first value are the flags and modifiers.
-**		The second value is the scancode to send.
-**		Comments are the ascii output of the keyboard driver.
-*/
+//
+//	Table sequences to scancodes.
+//		The first value are the flags and modifiers.
+//		The second value is the scancode to send.
+//		Comments are the ascii output of the keyboard driver.
+//
 static OHKey AOHKTable[10*10+1+8];
 
-/*
-**	Table quoted sequences to scancodes.
-**		The first value are the flags and modifiers.
-**		The second value is the scancode to send.
-*/
+//
+//	Table quoted sequences to scancodes.
+//		The first value are the flags and modifiers.
+//		The second value is the scancode to send.
+//
 static OHKey AOHKQuoteTable[10*10+1+8];
 
-/*
-**	Table super quoted sequences to scancodes.
-**	If we need more codes, they can be added here.
-**		The first value are the flags and modifiers.
-**		The second value is the scancode to send.
-**	FIXME:	ALT? Keycode?
-*/
+//
+//	Table super quoted sequences to scancodes.
+//	If we need more codes, they can be added here.
+//		The first value are the flags and modifiers.
+//		The second value is the scancode to send.
+//	FIXME:	ALT? Keycode?
+//
 static OHKey AOHKSuperTable[10*10+1+8];
 
-/*
-**	Game Table sequences to scancodes.
-**		The first value are the flags and modifiers.
-**		The second value is the scancode to send.
-*/
+//
+//	Game Table sequences to scancodes.
+//		The first value are the flags and modifiers.
+//		The second value is the scancode to send.
+//
 static OHKey AOHKGameTable[OH_SPECIAL+1] = {
 #ifdef DEFAULT
 // This can't be used, quote is used insteed.
@@ -203,9 +210,9 @@ static OHKey AOHKGameTable[OH_SPECIAL+1] = {
 #endif
 };
 
-/*
-**	Quote Game Table sequences to scancodes.
-*/
+//
+//	Quote Game Table sequences to scancodes.
+//
 static OHKey AOHKQuoteGameTable[OH_SPECIAL+1] = {
 #ifdef DEFAULT
 /* 0 */ { 0,		KEY_SPACE },	// SPACE
@@ -237,6 +244,45 @@ static OHKey AOHKQuoteGameTable[OH_SPECIAL+1] = {
 /*NUM*/ { 0,		KEY_5	},	// 5
 #endif
 };
+
+
+//
+//	Number Table sequences to scancodes.
+//		The first value are the flags and modifiers.
+//		The second value is the scancode to send.
+//
+static OHKey AOHKNumberTable[OH_SPECIAL+1] = {
+#ifdef DEFAULT
+/* * */ { 0,		KEY_KPENTER },	// ENTER
+/* 1 */ { 0,		KEY_KP1	},	// 1
+/* 2 */ { 0,		KEY_KP2	},	// 2
+/* 3 */ { 0,		KEY_KP3	},	// 3
+
+/* 4 */ { 0,		KEY_KP4	},	// 4
+/* 5 */ { 0,		KEY_KP5	},	// 5
+/* 6 */ { 0,		KEY_KP6	},	// 6
+
+/* 7 */ { 0,		KEY_KP7	},	// 7
+/* 8 */ { 0,		KEY_KP8	},	// 8
+/* 9 */ { 0,		KEY_KP9	},	// 9
+
+/* # */ { 0,		KEY_KP0},	// 0
+/* . */ { 0,		KEY_KPDOT },	// .
+
+/* % */ { 0,		KEY_KPSLASH },	// %
+/* * */ { 0,		KEY_KPASTERISK},// *
+/* - */ { 0,		KEY_KPMINUS },	// -
+/* + */ { 0,		KEY_KPPLUS },	// +
+
+/* ? */ { 0,		KEY_ESC	},	// ESC
+/* ? */ { 0,		KEY_LEFTCTRL },	// CTRL
+/* ? */ { 0,		KEY_LEFTALT },	// ALT
+/* ? */ { 0,		KEY_BACKSPACE },// BSP
+
+/*NUM*/ { RESET,	KEY_RESERVED },	// Return to normal mode
+#endif
+};
+
 //
 //	*INDENT-ON*
 
@@ -549,6 +595,12 @@ static void AOHKDoSequence(const OHKey * sequence)
 	case STICKY:
 	    // FIXME: sticky qualifier
 	    break;
+	case TOGAME:
+	    AOHKEnterGameMode();
+	    break;
+	case TONUM:
+	    AOHKEnterNumberMode();
+	    break;
 	case SPECIAL:
 	    AOHKEnterSpecialState();
 	    break;
@@ -587,6 +639,17 @@ static void AOHKEnterGameMode(void)
     AOHKReset();			// release keys, ...
     AOHKState = OHGameMode;
     GameModeLedOn();
+}
+
+//
+//      Enter number mode
+//
+static void AOHKEnterNumberMode(void)
+{
+    Debug(4, "Number mode on.\n");
+    AOHKReset();			// release keys, ...
+    AOHKState = OHNumberMode;
+    NumberModeLedOn();
 }
 
 //
@@ -641,8 +704,12 @@ static void AOHKFirstKey(int key)
 		AOHKEnterGameMode();
 		break;
 	    }
-	    // macro -> macro is ignored
-	    AOHKState = OHMacroFirstKey;
+	    // FIXME: make macro -> macro configurable
+	    if (AOHKState == OHMacroFirstKey) {
+		AOHKEnterNumberMode();
+	    } else {
+		AOHKState = OHMacroFirstKey;
+	    }
 	    break;
 
 	case OH_QUOTE:			// enter quote state
@@ -882,6 +949,39 @@ void AOHKGameMode(int key)
 }
 
 //
+//      Handle the number mode state.
+//
+void AOHKNumberMode(int key)
+{
+    const OHKey *sequence;
+
+    Debug(1, "Numbermode key %d.\n", key);
+
+    sequence = &AOHKNumberTable[key];
+
+    //
+    //  Reset is used to return to normal mode.
+    //
+    if (sequence->Modifier == RESET) {
+	Debug(4, "Number mode off.\n");
+	// Release all still pressed keys.
+	for (key = 0; key <= OH_SPECIAL; ++key) {
+	    if (AOHKGamePressed & (1 << key)) {
+		sequence = &AOHKNumberTable[key];
+		AOHKSendReleaseSequence(0, sequence);
+	    }
+	}
+	AOHKGamePressed = 0;
+	AOHKState = OHFirstKey;
+	NumberModeLedOff();
+	return;
+    }
+
+    AOHKDoSequence(sequence);
+    AOHKGamePressed |= (1 << key);
+}
+
+//
 //      Handle the special state.
 //
 static void AOHKSpecialMode(int key)
@@ -956,6 +1056,11 @@ static void AOHKSpecialMode(int key)
 	AOHKEnterGameMode();
 	return;
     }
+    if (key == OH_KEY_7) {		// number mode
+	Debug(4, "Number mode on.\n");
+	AOHKEnterNumberMode();
+	return;
+    }
     if (key == OH_KEY_9) {		// turn it off
 	AOHKState = OHHardOff;
 	Debug(4, "one-hand: Turned off.\n");
@@ -1013,7 +1118,10 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
     //  Handling of unsupported input keys.
     //
     if (key == -1) {
-	if (!AOHKState == OHGameMode) {
+	Debug(1, "Unsupported key %d=%#02x of state %d.\n", inkey, inkey,
+	    AOHKState);
+
+	if (AOHKState != OHGameMode && AOHKState != OHNumberMode) {
 	    AOHKReset();		// any unsupported key reset us
 	}
 	if (!AOHKOnlyMe) {		// other keys aren't disabled
@@ -1022,7 +1130,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	return;
     }
 
-    Debug(1, "Key %02x -> %d of state %d.\n", inkey, key, AOHKState);
+    Debug(1, "Key %#02x -> %d of state %d.\n", inkey, key, AOHKState);
 
     //
     //  Test for repeat and handle release
@@ -1041,6 +1149,17 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 		AOHKGameSendQuote = 0;
 	    }
 	    AOHKGameModeRelease(key);
+	    //
+	    //     Number mode, release and press aren't ordered.
+	    //
+	} else if (AOHKState == OHNumberMode) {
+	    if (AOHKGamePressed & (1 << key)) {
+		AOHKGamePressed ^= 1 << key;
+		AOHKSendReleaseSequence(0, &AOHKNumberTable[key]);
+	    } else {
+		// Happens on release of start sequence.
+		Debug(5, "oops key %d was not pressed\n", key);
+	    }
 	} else {
 	    //
 	    //  Need to send a release sequence.
@@ -1077,8 +1196,8 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	//      QUOTE is repeated in game mode, is this good?
 	//      QUAL modifiers aren't repeated
 	//
-	if ((AOHKState == OHGameMode || AOHKState == OHFirstKey)
-	    && AOHKLastSequence) {
+	if (AOHKLastSequence && (AOHKState == OHGameMode
+		|| AOHKState == OHFirstKey || AOHKState == OHNumberMode)) {
 	    AOHKSendPressSequence(AOHKLastModifier, AOHKLastSequence);
 	}
 	return;
@@ -1114,6 +1233,10 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	    AOHKGameMode(key);
 	    break;
 
+	case OHNumberMode:
+	    AOHKNumberMode(key);
+	    break;
+
 	case OHSpecial:
 	    AOHKSpecialMode(key);
 	    break;
@@ -1132,8 +1255,8 @@ void AOHKFeedTimeout(int which)
     //
     //  Timeout -> reset to intial state
     //
-    if (AOHKState != OHGameMode && AOHKState != OHSoftOff
-	&& AOHKState != OHHardOff) {
+    if (AOHKState != OHGameMode && AOHKState != OHNumberMode
+	&& AOHKState != OHSoftOff && AOHKState != OHHardOff) {
 	// Long time: total reset
 	if (which >= AOHKTimeout * 10) {
 	    Debug(1, "Timeout long %d\n", which);
@@ -1455,6 +1578,9 @@ static void AOHKSaveSequence(FILE * fp, const unsigned char *s)
 	    break;
 	case TOGAME:
 	    fprintf(fp, "GAME\n");
+	    break;
+	case TONUM:
+	    fprintf(fp, "NUM\n");
 	    break;
 	case SPECIAL:
 	    fprintf(fp, "SPECIAL\n");
@@ -1822,6 +1948,9 @@ static void AOHKParseOutput(char *line, OHKey * out)
     } else if (l == sizeof("togame") - 1
 	&& !strncasecmp(line, "togame", sizeof("togame") - 1)) {
 	modifier = TOGAME;
+    } else if (l == sizeof("tonum") - 1
+	&& !strncasecmp(line, "tonum", sizeof("tonum") - 1)) {
+	modifier = TONUM;;
     } else if (l == sizeof("special") - 1
 	&& !strncasecmp(line, "special", sizeof("special") - 1)) {
 	modifier = SPECIAL;
@@ -2630,6 +2759,7 @@ void AOHKSetLanguage(const char *lang)
 	    case QUAL:
 	    case STICKY:
 	    case TOGAME:
+	    case TONUM:
 	    case SPECIAL:
 		s[0] = AOHKTable[i].Modifier;
 		break;
@@ -2651,6 +2781,7 @@ void AOHKSetLanguage(const char *lang)
 	    case QUAL:
 	    case STICKY:
 	    case TOGAME:
+	    case TONUM:
 	    case SPECIAL:
 		s[0] = AOHKTable[i].Modifier;
 		break;
