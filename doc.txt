@@ -1,35 +1,35 @@
 Eine weitere Hilfstabelle:
 
-Zeichen und Umgekehter Code Zeichen.
-42 ist 'a'	24 ist [CTRL]
+Zeichen und umgekehter Code Zeichen.
+42 ist 'a'	24 ist LeftCTRL
 
-a 42 [CTRL]
+a 42 LeftCTRL
 b 62 -
 c 98 ESC
-d 18
-e 45
-f 38
-g 95
-h 72
-i 12
-j 76
-k 46
-l 32
-m 35
-n 78
-o 65
-p 92
-q 31
-r 15
-s 48
-t 75
-u 68
-v 16
-w 13
-x 49
-y 43
-z 79
-ä 17
-ö 28
-ü 39
-ß 71
+d 18 ;
+e 45 SPACE
+f 38 :
+g 95 )
+h 72 ,
+i 12 RETURN
+j 76 +
+k 46 *
+l 32 .
+m 35 (
+n 78 BACKSPACE
+o 65 TAB
+p 92 !
+q 31 w
+r 15 LeftShift
+s 48 LeftAlt
+t 75 LeftMeta
+u 68 |
+v 16 &
+w 13 q
+x 49 _
+y 43 "
+z 79 /
+ä 17 ß
+ö 28 @
+ü 39 `
+ß 71 ä
