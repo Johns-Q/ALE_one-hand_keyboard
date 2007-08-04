@@ -67,12 +67,12 @@ static int N52ConvertTable[] = {
     KEY_TAB, OH_USR_1,
     KEY_CAPSLOCK, OH_USR_2,
     KEY_R, OH_USR_3,
-    KEY_F, OH_USR_4,
-    KEY_UNKNOWN, OH_USR_5,
-    KEY_UNKNOWN, OH_USR_6,
-    KEY_UNKNOWN, OH_USR_7,
-    KEY_UNKNOWN, OH_USR_8,
-    KEY_UNKNOWN, OH_SPECIAL,
+    //KEY_F, OH_USR_4,
+    //KEY_LEFT, OH_USR_5,
+    //KEY_UP, OH_USR_6,
+    //KEY_RIGHT, OH_USR_7,
+    //KEY_DOWN, OH_USR_8,
+    KEY_F, OH_SPECIAL,
     KEY_RESERVED, KEY_RESERVED
 };
 
@@ -151,7 +151,7 @@ struct input_device
     int *ConvertTable;
 } InputDevices[] = {
     {
-    "N52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable}, {
+    "n52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable}, {
     "pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable}, {
     "keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable}, {
     NULL, 0, 0, NULL}
@@ -250,8 +250,9 @@ int OpenEvent(void)
 		    }
 		    if (InputDevices[j].Vendor == info.vendor
 			&& InputDevices[j].Product == info.product) {
-			printf("Device found BUS: %04X Vendor: %04X Product: "
-			    "%04X Version: %04X\n", info.bustype, info.vendor,
+			printf("Device '%s' found BUS: %04X Vendor: %04X "
+			    "Product: %04X Version: %04X\n",
+			    InputDevices[j].ID, info.bustype, info.vendor,
 			    info.product, info.version);
 			// Grab the device for exclusive use
 			if (ioctl(fd, EVIOCGRAB, 1) < 0) {
@@ -261,8 +262,9 @@ int OpenEvent(void)
 			    InputLEDs[InputFdsN] = EventCheckLEDs(fd);
 			    InputFds[InputFdsN++] = fd;
 			}
-			if( !NoConvertTable) {
-			    AOHKSetupConvertTable(InputDevices[j].ConvertTable);
+			if (!NoConvertTable) {
+			    AOHKSetupConvertTable(InputDevices[j].
+				ConvertTable);
 			}
 			goto found;
 		    }
@@ -534,6 +536,21 @@ void Firework(void)
 }
 
 //
+//      List supported devices
+//
+static void ListSupportedDevices(void)
+{
+    int j;
+
+    for (j = 0; InputDevices[j].ID; ++j) {
+	if (UseDev && strcasecmp(UseDev, InputDevices[j].ID)) {
+	    printf("*");
+	}
+	printf("%s ", InputDevices[j].ID);
+    }
+}
+
+//
 //      Main entry point.
 //
 int main(int argc, char **argv)
@@ -541,7 +558,9 @@ int main(int argc, char **argv)
     int i;
     int ufd;
     int debugtable;
+    const char *lang;
 
+    lang = "de";			// My choice :>
     debugtable = 0;
 
     printf("ALE one-hand keyboard daemon Version 0.03\n");
@@ -551,21 +570,26 @@ int main(int argc, char **argv)
     //          -d wich device
     //
     for (;;) {
-	switch (getopt(argc, argv, "Dld:p:s:v:h?")) {
+	switch (getopt(argc, argv, "DLl:d:p:s:v:h?")) {
 	    case EOF:
 		break;
 	    case 'd':			// device
 		UseDev = optarg;
 		continue;
-	    case 'l':			// list
-		ListDevices = 1;
-		continue;;
+	    case 'l':			// language
+		if (strlen(optarg) != 2) {
+		    printf("Use 2 character language codes. FE. 'de', 'us'\n");
+		    exit(-1);
+		}
+		lang = optarg;
+		continue;
 	    case 'p':			// product id
 		UseProduct = strtol(optarg, NULL, 0);
 		continue;
 	    case 's':
 		// FIXME: hack
 		AOHKSetupConvertTable(InputDevices[0].ConvertTable);
+		AOHKSetLanguage(lang);
 		AOHKSaveTable(optarg);
 		exit(-1);
 	    case 'v':			// vendor id
@@ -574,17 +598,23 @@ int main(int argc, char **argv)
 	    case 'D':
 		debugtable = 1;
 		continue;
+	    case 'L':			// list
+		ListDevices = 1;
+		continue;;
 
 	    case 'h':
 		printf("Usage: %s [OPTIONs]... [FILEs]...\t"
 		    "load specified file(s)\n"
 		    "   or: %s [OPTIONs]... -\t\tread mapping from stdin\n"
 		    "Options:\n" "-h\tPrint this page\n"
-		    "-l\tList all available input devices\n"
+		    "-L\tList all available input devices\n"
 		    "-d dev\tUse only this input device\n"
 		    "-v id\tAlso use the input device with vendor id\n"
 		    "-p id\tAlso use the input device with product id\n"
 		    "-s file\tSave internal tables\n", argv[0], argv[0]);
+		printf("Supported Inputdevices: ");
+		ListSupportedDevices();
+		printf("\n");
 		exit(0);
 	    case ':':
 		printf("Missing argument for option '%c'\n", optopt);
@@ -597,6 +627,11 @@ int main(int argc, char **argv)
     }
 
     //
+    //  Load language defaults.
+    //
+    AOHKSetLanguage(lang);
+
+    //
     //  Remaining files load as keymap.
     //
     for (i = optind; i < argc; ++i) {
@@ -607,7 +642,6 @@ int main(int argc, char **argv)
     if (OpenEvent()) {
 	exit(-1);
     }
-
     //
     //  For debug save current mapping.
     //
