@@ -1,0 +1,24 @@
+Deutsche Hilfe:
+
+Man könnte das Major-System benutzen um sich die Eingabecodes zumerken.
+
+Siehe: http://de.wikipedia.org/wiki/Major-System
+
+Das Major-System (auch Mastersystem genannt) ist eine Gedächtnistechnik, die
+auf der Zuordnung von Lauten zu Ziffern basiert. Die gebräuchlichste Zuordnung
+ist: Beispiel:
+
+Ziffer 	Ersatz-
+	konsonanten 	Merkhilfen
+0 	s,z,ß,ss 	vgl. englisch zero
+1 	t,d 		t könnte man mit einer 1 verwechseln, d ist lautverwandt
+2 	n 		n hat zwei Beine
+3 	m 		m hat drei Beine
+4 	r 		vier endet mit R
+5 	l 		L erinnert an die römische Ziffer 50
+6 	ch,j,sch 	s -e- chs hat viele s (j wie Dschungel)
+7 	k,g,ck 		7 ist eine G -lü- ck -szahl
+8 	f,v,w,ph 	V8 Motor bei VW
+9 	p,b 		9 ist ein spiegelverkehrtes P oder verdrehtes B
+			(beide sind lautverwandt)
+
