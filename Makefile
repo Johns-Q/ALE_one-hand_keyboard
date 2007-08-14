@@ -20,7 +20,8 @@ dist:
 	one-hand/aohk-refcard.svgz one-hand/aohk-refcard.png \
 	one-hand/us.default.map one-hand/de.default.map \
 	one-hand/pc102leftside.map \
-	one-hand/pc102numpad.map one-hand/pc102rotated.map
+	one-hand/pc102numpad.map one-hand/pc102rotated.map \
+	one-hand/o2.typ
 
 clean:
 	-rm *.o *~
