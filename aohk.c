@@ -624,7 +624,7 @@ static void AOHKDoSequence(const OHKey * sequence)
 static int AOHKMapToInternal(int key, __attribute__ ((unused))
     int down)
 {
-    if (key < 0 || key > 255) {
+    if (key < 0 || (unsigned)key >= sizeof(AOHKConvertTable)) {
 	return -1;
     }
     return AOHKConvertTable[key] == 255 ? -1 : AOHKConvertTable[key];
@@ -1015,8 +1015,8 @@ static void AOHKSpecialMode(int key)
 	    KeyOut(KEY_DOT, 0);
 	    KeyOut(KEY_0, 1);
 	    KeyOut(KEY_0, 0);
-	    KeyOut(KEY_3, 1);
-	    KeyOut(KEY_3, 0);
+	    KeyOut(KEY_5, 1);
+	    KeyOut(KEY_5, 0);
 	    return;
 
 	case OH_KEY_5:			// exit
@@ -1084,7 +1084,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	return;
     }
 
-    Debug(1, "Keyin %02X %s\n", inkey, down ? "down" : "up");
+    Debug(1, "Keyin 0x%02X=%d %s\n", inkey, inkey, down ? "down" : "up");
     key = AOHKMapToInternal(inkey, down);
 
     //
@@ -1283,9 +1283,9 @@ void AOHKFeedTimeout(int which)
 //
 void AOHKResetConvertTable(void)
 {
-    int idx;
+    size_t idx;
 
-    for (idx = 0; idx < 255; ++idx) {
+    for (idx = 0; idx < sizeof(AOHKConvertTable); ++idx) {
 	AOHKConvertTable[idx] = 255;
     }
 }
@@ -1360,7 +1360,7 @@ void AOHKSetupConvertTable(const int *table)
     AOHKResetConvertTable();
 
     while ((idx = *table++)) {
-	if (idx > 0 && idx < 256) {
+	if (idx > 0 && (unsigned)idx < sizeof(AOHKConvertTable)) {
 	    AOHKConvertTable[idx] = *table;
 	}
 	++table;
@@ -1550,12 +1550,12 @@ static const char* AOHKInternal2String[] = {
 //
 static void AOHKSaveConvertTable(FILE * fp, const unsigned char *t)
 {
-    int i;
+    size_t i;
 
     fprintf(fp, "\n//\tConverts input keys to internal symbols\nconvert:\n");
     for (i = 0;
-	i < 255
-	&& (unsigned)i < sizeof(AOHKKey2String) / sizeof(*AOHKKey2String);
+	i < sizeof(AOHKConvertTable)
+	&& i < sizeof(AOHKKey2String) / sizeof(*AOHKKey2String);
 	++i) {
 	if (t[i] != 255) {
 	    fprintf(fp, "%-10s\t-> %s\n", AOHKKey2String[i],
@@ -1688,6 +1688,9 @@ static void AOHKSaveMacroTable(FILE * fp, const char *prefix,
     int i;
 
     for (i = 0; i < n; ++i) {
+	if (!t[i]) {			// Empty entry
+	    continue;
+	}
 	//
 	//      Print internal sequence code
 	//
@@ -1746,16 +1749,22 @@ void AOHKSaveTable(const char *file)
     fprintf(fp, "//\tsuper 0# key prefix\n");
     AOHKSaveMapping(fp, "0#", (unsigned char *)AOHKSuperTable,
 	sizeof(AOHKSuperTable));
-    fprintf(fp, "//\tgame *# key prefix\n");
+    fprintf(fp, "//\tgame mode *# key prefix\n");
     AOHKSaveGameTable(fp, "*#", (unsigned char *)AOHKGameTable,
 	sizeof(AOHKGameTable));
-    fprintf(fp, "//\tquote game 0*# key prefix\n");
+    fprintf(fp, "//\tquote game mode 0*# key prefix\n");
     AOHKSaveGameTable(fp, "0*#", (unsigned char *)AOHKQuoteGameTable,
 	sizeof(AOHKQuoteGameTable));
+    fprintf(fp, "//\tnumber mode ** key prefix\n");
+    AOHKSaveGameTable(fp, "**", (unsigned char *)AOHKNumberTable,
+	sizeof(AOHKNumberTable));
 
     fprintf(fp, "//\t# Macro strings * key prefix\nmacro:\n");
     AOHKSaveMacroTable(fp, "*", (const unsigned char **)AOHKMacroTable,
 	sizeof(AOHKMacroTable) / sizeof(*AOHKMacroTable));
+
+    AOHKSaveMacroTable(fp, "*0", (const unsigned char **)AOHKMacroQuoteTable,
+	sizeof(AOHKMacroQuoteTable) / sizeof(*AOHKMacroQuoteTable));
 
     if (strcmp(file, "-")) {		// !stdout
 	fclose(fp);
@@ -1877,7 +1886,7 @@ static void AOHKParseConvert(char *line)
 
     Debug(1, "Key %d -> %d\n", key, internal);
 
-    if (key > 0 && key < 256) {
+    if (key > 0 && (unsigned)key < sizeof(AOHKConvertTable)) {
 	AOHKConvertTable[key] = internal;
     } else {
 	Debug(5, "Key %d out of range\n", key);
