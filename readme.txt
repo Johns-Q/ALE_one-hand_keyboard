@@ -50,13 +50,13 @@ make && ./aohk-daemon
 How to use:
 -----------
 
-The load your language mapping use: ./aohk-daemon de.default.map
+To load your language mapping use: ./aohk-daemon de.default.map
 
 To use only one input device use:
 
 ./aohk-daemon -d n52	# Nostrome n52
 ./aohk-daemon -d pc102	# 102 PC Keyboard
-
+./aohk-daemon -d keypad	# Cherry Keypad G84-4700
 
 Further documentation:
 ---------------------
