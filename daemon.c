@@ -40,10 +40,13 @@
 #define PS2_KEYBOARD_ID		0x0001	// System keyboard
 
 #define BELKIN_VENDOR_ID	0x050D	// Belkin's vendor ID
-#define NOSTROMO_N52_ID		0x0815	// n52 USB ID
+#define NOSTROMO_N52_ID		0x0815	// nostromo n52 USB ID
 
 #define CHERRY_VENDOR_ID	0x046A	// Cherry's vendor ID
 #define KEYPAD_ID		0x0014	// Keypad G84-4700 USB ID
+
+#define SAITEK_VENDOR_ID	0x06A3	// Saitek's vendor ID
+#define PGCU_ID			0x80C0	// Pro Gamer Command Unit USB ID
 
 //
 //      Mapping from keys to internal key for nostromo N52
@@ -142,6 +145,37 @@ static int NumpadConvertTable[] = {
 };
 
 //
+//      Mapping from keys to internal key for Pro Gamer Command Unit
+//      End marked with KEY_RESERVED
+//
+static int PgcuConvertTable[] = {
+    16, OH_QUOTE,
+    9, OH_KEY_1,
+    10, OH_KEY_2,
+    11, OH_KEY_3,
+    5, OH_KEY_4,
+    6, OH_KEY_5,
+    7, OH_KEY_6,
+    1, OH_KEY_7,
+    2, OH_KEY_8,
+    3, OH_KEY_9,
+    12, OH_REPEAT,
+    13, OH_REPEAT,
+
+    15, OH_MACRO,
+    21, OH_MACRO,
+
+    17, OH_USR_1,
+    18, OH_USR_2,
+    19, OH_USR_3,
+    20, OH_USR_4,
+    4, OH_SPECIAL,
+    
+    // 14, 8, 22, 23. 24 unused
+    KEY_RESERVED, KEY_RESERVED
+};
+
+//
 //      Table of supported input devices/
 struct input_device
 {
@@ -149,16 +183,19 @@ struct input_device
     int Vendor;
     int Product;
     int *ConvertTable;
+    int Offset;				// To convert buttons!
 } InputDevices[] = {
     {
-    "n52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable}, {
-    "pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable}, {
-    "keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable}, {
-    NULL, 0, 0, NULL}
+    "n52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable, 0}, {
+    "pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable, 0}, {
+    "keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable, 0}, {
+    "pgcu", SAITEK_VENDOR_ID, PGCU_ID, PgcuConvertTable, 0x11F}, {
+    NULL, 0, 0, NULL, 0}
 };
 
 #define MAX_INPUTS	32
 int InputFds[MAX_INPUTS];		// Inputs
+int InputDid[MAX_INPUTS];		// Input device ID
 int InputLEDs[MAX_INPUTS];		// Inputs LED support
 int InputFdsN;				// Number of Inputs
 
@@ -236,6 +273,7 @@ int OpenEvent(void)
 			perror("ioctl(EVIOCGRAB)");
 		    }
 		    if (InputFdsN < MAX_INPUTS) {
+			InputDid[InputFdsN] = 0;
 			InputLEDs[InputFdsN] = EventCheckLEDs(fd);
 			InputFds[InputFdsN++] = fd;
 		    }
@@ -259,6 +297,7 @@ int OpenEvent(void)
 			    perror("ioctl(EVIOCGRAB)");
 			}
 			if (InputFdsN < MAX_INPUTS) {
+			    InputDid[InputFdsN] = j;
 			    InputLEDs[InputFdsN] = EventCheckLEDs(fd);
 			    InputFds[InputFdsN++] = fd;
 			}
@@ -425,7 +464,7 @@ void ShowLED(int num, int state)
 //
 //      Input read
 //
-void InputRead(int fd)
+void InputRead(int did, int fd)
 {
     struct input_event ev;
 
@@ -435,10 +474,12 @@ void InputRead(int fd)
     }
     switch (ev.type) {
 	case EV_KEY:			// Key event
-	    // printf("Key %d %s\n", ev.code, ev.value ? "pressed" : "released");
+	    //printf("Key 0x%02X=%d %s\n", ev.code, ev.code,
+	    //	ev.value ? "pressed" : "released");
+	    // FIXME: 0x100 - 0x200
 	    // Feed into AOHK Statemachine
 	    AOHKFeedKey(ev.time.tv_sec * 1000 + ev.time.tv_usec / 1000,
-		ev.code, ev.value);
+		ev.code - InputDevices[did].Offset, ev.value);
 	    break;
 
 	case EV_LED:			// Led event
@@ -483,7 +524,7 @@ void EventLoop(void)
 	}
 	for (i = 0; i < InputFdsN; ++i) {
 	    if (fds[i].revents) {
-		InputRead(fds[i].fd);
+		InputRead(InputDid[i], fds[i].fd);
 		fds[i].revents = 0;
 	    }
 	}
@@ -563,7 +604,7 @@ int main(int argc, char **argv)
     lang = "de";			// My choice :>
     debugtable = 0;
 
-    printf("ALE one-hand keyboard daemon Version 0.03\n");
+    printf("ALE one-hand keyboard daemon Version 0.05\n");
     //
     //  Arguments:
     //          -l loading keyboard mapping.
