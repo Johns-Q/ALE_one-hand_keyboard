@@ -1084,7 +1084,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	return;
     }
 
-    Debug(1, "Keyin 0x%02X=%d %s\n", inkey, inkey, down ? "down" : "up");
+    Debug(2, "Keyin 0x%02X=%d %s\n", inkey, inkey, down ? "down" : "up");
     key = AOHKMapToInternal(inkey, down);
 
     //
@@ -2077,6 +2077,17 @@ static void AOHKParseMapping(char *line)
 	}
 	Debug(1, "Game mode: %d\n", internal);
 	AOHKParseOutput(s, AOHKGameTable + internal);
+	return;
+    }
+    // Number mode '**' internal key name
+    if (line[0] == '*' && line[1] == '*') {
+	internal = AOHKString2Internal(line + 2, l - 2);
+	if (internal == -1) {
+	    Debug(5, "Key '%s' not found\n", line);
+	    return;
+	}
+	Debug(1, "Number mode: %d\n", internal);
+	AOHKParseOutput(s, AOHKNumberTable + internal);
 	return;
     }
     // Macro key '*'
