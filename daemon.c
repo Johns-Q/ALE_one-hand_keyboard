@@ -490,6 +490,14 @@ void InputRead(int did, int fd)
 	case EV_SYN:			// Synchronization events
 	    // Ignore
 	    break;
+	case EV_ABS:			// ABS event parse on.
+	    printf("Event Type(%d,%d,%d) abs\n", ev.type, ev.code,
+		ev.value);
+	    if (write(UInputFd, &ev, sizeof(ev)) != sizeof(ev)) {
+		perror("write");
+	    }
+	    break;
+
 	default:
 	    printf("Event Type(%d,%d,%d) unsupported\n", ev.type, ev.code,
 		ev.value);
@@ -550,7 +558,7 @@ void KeyOut(int key, int pressed)
 }
 
 //
-//      Show firework.
+//      Show firework. No time lost, need some delay to release start keys.
 //
 void Firework(void)
 {
@@ -561,8 +569,12 @@ void Firework(void)
 	{0, 0, 1},
 	{0, 1, 0},
 	{1, 0, 0},
-	{0, 0, 0},
-	{1, 1, 1},
+	{0, 1, 0},
+	{0, 0, 1},
+	{0, 1, 0},
+	{1, 0, 0},
+	{0, 1, 0},
+	{0, 0, 1},
 	{0, 0, 0},
 	{-1, -1, -1},
     };
@@ -649,6 +661,7 @@ int main(int argc, char **argv)
 		    "   or: %s [OPTIONs]... -\t\tread mapping from stdin\n"
 		    "Options:\n" "-h\tPrint this page\n"
 		    "-L\tList all available input devices\n"
+		    "-l lang\tUse internal language table (de,us)\n"
 		    "-d dev\tUse only this input device\n"
 		    "-v id\tAlso use the input device with vendor id\n"
 		    "-p id\tAlso use the input device with product id\n"
@@ -680,6 +693,8 @@ int main(int argc, char **argv)
 	AOHKLoadTable(argv[i]);
     }
 
+    sleep(1);				// sleep 1s for key release
+
     if (OpenEvent()) {
 	exit(-1);
     }
@@ -691,10 +706,10 @@ int main(int argc, char **argv)
     }
 
     ufd = OpenUInput();
-    if (ufd) {
+    if (ufd>=0) {
 	UInputFd = ufd;
 	printf("Press SPECIAL 5 to exit\n");
-	Firework();
+	//Firework();
 	EventLoop();
 
 	CloseUInput(ufd);
@@ -702,6 +717,9 @@ int main(int argc, char **argv)
     for (i = 0; i < InputFdsN; ++i) {
 	close(InputFds[i]);
     }
+
+    // FIXME: Key relase got as event
+    sleep(1);				// sleep 1s for key release
 
     return 0;
 }
