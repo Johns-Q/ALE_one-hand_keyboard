@@ -2,22 +2,22 @@
 
 /**@name daemon.c	-	Keyboard handler daemon.	*/
 //
-//      Copyright (c) 2007 by Lutz Sammer.  All Rights Reserved.
+//	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
 //
-//      Contributor(s):
+//	Contributor(s):
 //
-//      This file is part of ALE one-hand keyboard
+//	This file is part of ALE one-hand keyboard
 //
-//      This program is free software; you can redistribute it and/or modify
-//      it under the terms of the GNU General Public License as published by
-//      the Free Software Foundation; only version 2 of the License.
+//	This program is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; only version 2 of the License.
 //
-//      This program is distributed in the hope that it will be useful,
-//      but WITHOUT ANY WARRANTY; without even the implied warranty of
-//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//      GNU General Public License for more details.
+//	This program is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
 //
-//      $Id$
+//	$Id$
 ////////////////////////////////////////////////////////////////////////////
 
 #include <linux/input.h>
@@ -31,7 +31,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-
+#include <errno.h>
+#include <syslog.h>
 #include <poll.h>
 
 #include "aohk.h"
@@ -48,9 +49,16 @@
 #define SAITEK_VENDOR_ID	0x06A3	// Saitek's vendor ID
 #define PGCU_ID			0x80C0	// Pro Gamer Command Unit USB ID
 
+#define APPLE_VENDOR_ID		0x05AC	// Apple vendor ID
+#define AWKB_ID			0x0209	// Wireless keyboard BT ID
+#define AAWKB_ID		0x022D	// Alu Wireless keyboard BT ID
+
+#define	LOGITECH_VENDOR_ID	0x046D	// Logitech vendoor ID
+#define G13_ID			0xC21C	// G13 USB keyboard ID
+
 //
-//      Mapping from keys to internal key for nostromo N52
-//      End marked with KEY_RESERVED
+//	Mapping from keys to internal key for nostromo N52
+//	End marked with KEY_RESERVED
 //
 static int N52ConvertTable[] = {
     KEY_SPACE, OH_QUOTE,
@@ -80,9 +88,9 @@ static int N52ConvertTable[] = {
 };
 
 //
-//      Mapping from keys to internal key for normal keyboard.
-//      typing on the left side of keyboard with left hand.
-//      End marked with KEY_RESERVED
+//	Mapping from keys to internal key for normal keyboard.
+//	typing on the left side of keyboard with left hand.
+//	End marked with KEY_RESERVED
 //
 static int PC102ConvertTable[] = {
     KEY_SPACE, OH_QUOTE,
@@ -96,8 +104,12 @@ static int PC102ConvertTable[] = {
     KEY_W, OH_KEY_8,
     KEY_E, OH_KEY_9,
     KEY_LEFTSHIFT, OH_REPEAT,
+    KEY_CAPSLOCK, OH_REPEAT,
+    KEY_LEFTCTRL, OH_REPEAT,
+    KEY_102ND, OH_REPEAT,
 
     KEY_LEFTALT, OH_MACRO,
+    KEY_LEFTMETA, OH_MACRO,
 
     KEY_TAB, OH_USR_1,
     KEY_1, OH_USR_2,
@@ -112,9 +124,9 @@ static int PC102ConvertTable[] = {
 };
 
 //
-//      Mapping from keys to internal key for normal keyboard.
-//      typing with a number/key pad.
-//      End marked with KEY_RESERVED
+//	Mapping from keys to internal key for normal keyboard.
+//	typing with a number/key pad.
+//	End marked with KEY_RESERVED
 //
 static int NumpadConvertTable[] = {
     KEY_KPENTER, OH_QUOTE,
@@ -145,8 +157,8 @@ static int NumpadConvertTable[] = {
 };
 
 //
-//      Mapping from keys to internal key for Pro Gamer Command Unit
-//      End marked with KEY_RESERVED
+//	Mapping from keys to internal key for Pro Gamer Command Unit
+//	End marked with KEY_RESERVED
 //
 static int PgcuConvertTable[] = {
     16, OH_QUOTE,
@@ -170,13 +182,19 @@ static int PgcuConvertTable[] = {
     19, OH_USR_3,
     20, OH_USR_4,
     4, OH_SPECIAL,
-    
+
     // 14, 8, 22, 23. 24 unused
+
+    22, OH_NOP,				// these produce only down, when switched up
+    23, OH_NOP,
+    24, OH_NOP,
+
     KEY_RESERVED, KEY_RESERVED
 };
 
 //
-//      Table of supported input devices/
+//	Table of supported input devices
+//
 struct input_device
 {
     char *ID;
@@ -190,49 +208,70 @@ struct input_device
     "pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable, 0}, {
     "keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable, 0}, {
     "pgcu", SAITEK_VENDOR_ID, PGCU_ID, PgcuConvertTable, 0x11F}, {
+    "awkb", APPLE_VENDOR_ID, AWKB_ID, PC102ConvertTable, 0}, {
+    "aawkb", APPLE_VENDOR_ID, AAWKB_ID, PC102ConvertTable, 0}, {
+    "g13", LOGITECH_VENDOR_ID, G13_ID, PC102ConvertTable, 0}, {
     NULL, 0, 0, NULL, 0}
 };
 
 #define MAX_INPUTS	32
-int InputFds[MAX_INPUTS];		// Inputs
-int InputDid[MAX_INPUTS];		// Input device ID
-int InputLEDs[MAX_INPUTS];		// Inputs LED support
-int InputFdsN;				// Number of Inputs
+int InputFds[MAX_INPUTS];		///< Inputs
+int InputDid[MAX_INPUTS];		///< Input device ID
+int InputLEDs[MAX_INPUTS];		///< Inputs LED support
+int InputFdsN;				///< Number of Inputs
 
-int UInputFd;				// Output
+int UInputFd;				///< Output
 
-int Timeout = 1000;			// in: timeout used
-int Exit;				// in: exit
+int Timeout = 1000;			///< in: timeout used
+int Exit;				///< in: exit
 
-const char *UseDev;			// Wanted device
-int UseVendor;				// Wanted vendor
-int UseProduct;				// Wanted product
-int ListDevices;			// Show possible devices
-int NoConvertTable;			// Don't load device convert table
+const char *UseDev;			///< Wanted device
+int UseVendor;				///< Wanted vendor
+int UseProduct;				///< Wanted product
+int ListDevices;			///< Show possible devices
+int NoConvertTable;			///< Don't load device convert table
+int NoLed;				///< Don't use Leds
+
+int DebugLevel = 2;			///< Debug level
+int SysLog;				///< logging to syslog
 
 //----------------------------------------------------------------------------
-//      Input event
+//	Debug / Logging
 //----------------------------------------------------------------------------
 
 //
-//      Check if device supports LEDs.
+//	Debug output function.
 //
+#define Debug(level, fmt...) \
+    do { if (level<DebugLevel) { printf(fmt); } } while (0)
+
+#define InitDebug() \
+    do { if (SysLog) { openlog("aohk-daemon", 0, 0); } } while (0)
+#define ExitDebug()
+
+//----------------------------------------------------------------------------
+//	Input event
+//----------------------------------------------------------------------------
+
+///
+///	Check if device supports LEDs.
+///
 int EventCheckLEDs(int fd)
 {
     unsigned char led_bitmask[LED_MAX / 8 + 1] = { 0 };
 
-    // Look for a device to control LEDs on 
+    // Look for a device to control LEDs on
     if (ioctl(fd, EVIOCGBIT(EV_LED, sizeof(led_bitmask)), led_bitmask) >= 0) {
 	if (led_bitmask[0]) {
-	    printf("%d: supports led\n", fd);
-	    return 1;
+	    Debug(1, "%d: supports led\n", fd);
+	    return NoLed ? 0 : 1;
 	}
     }
     return 0;
 }
 
 //
-//      Open input event device.
+//	Open input event device.
 //
 int OpenEvent(void)
 {
@@ -260,13 +299,15 @@ int OpenEvent(void)
 	    // printf("Open success\n");
 	    if (ioctl(fd, EVIOCGID, &info) == 0) {
 		if (ListDevices) {
-		    printf("Bus: %04X Vendor: %04X Product: %04X "
+		    Debug(1,
+			"Bus: %04X Vendor: %04X Product: %04X "
 			"Version: %04X\n", info.bustype, info.vendor,
 			info.product, info.version);
 		}
 		if (UseVendor == info.vendor && UseProduct == info.product) {
-		    printf("Device found BUS: %04X Vendor: %04X Product: "
-			"%04X Version: %04X\n", info.bustype, info.vendor,
+		    Debug(1,
+			"Device(%d) found BUS: %04X Vendor: %04X Product: "
+			"%04X Version: %04X\n", fd, info.bustype, info.vendor,
 			info.product, info.version);
 		    // Grab the device for exclusive use
 		    if (ioctl(fd, EVIOCGRAB, 1) < 0) {
@@ -281,15 +322,17 @@ int OpenEvent(void)
 		}
 		for (j = 0; InputDevices[j].ID; ++j) {
 		    //
-		    //  Try only the requested input device.
+		    //	Try only the requested input device.
 		    //
 		    if (UseDev && strcasecmp(UseDev, InputDevices[j].ID)) {
 			continue;
 		    }
+		    printf("%s\n", UseDev);
 		    if (InputDevices[j].Vendor == info.vendor
 			&& InputDevices[j].Product == info.product) {
-			printf("Device '%s' found BUS: %04X Vendor: %04X "
-			    "Product: %04X Version: %04X\n",
+			Debug(1,
+			    "Device(%d) '%s' found BUS: %04X Vendor: %04X "
+			    "Product: %04X Version: %04X\n", fd,
 			    InputDevices[j].ID, info.bustype, info.vendor,
 			    info.product, info.version);
 			// Grab the device for exclusive use
@@ -312,14 +355,14 @@ int OpenEvent(void)
 		perror("ioctl(EVIOCGID)");
 	    }
 	    close(fd);
-	} else {
-	    // perror("open()");
+	} else if (errno != ENOENT) {
+	    fprintf(stderr, "open(%s):%s\n", dev, strerror(errno));
 	}
       found:;
     }
 
     if (!InputFdsN) {
-	printf("No useable device found.\n");
+	Debug(0, "No useable device found.\n");
 	return 1;
     }
 
@@ -327,7 +370,7 @@ int OpenEvent(void)
 }
 
 //
-//      Turn LED on/off.
+//	Turn LED on/off.
 //
 void EventLEDs(int fd, int num, int state)
 {
@@ -342,11 +385,11 @@ void EventLEDs(int fd, int num, int state)
 }
 
 //----------------------------------------------------------------------------
-//      Uinput
+//	Uinput
 //----------------------------------------------------------------------------
 
 //
-//      Open uinput device
+//	Open uinput device
 //
 int OpenUInput(void)
 {
@@ -354,7 +397,7 @@ int OpenUInput(void)
     int fd;
     struct uinput_user_dev device;
 
-    //  open uinput device file
+    //	open uinput device file
     if ((fd = open("/dev/misc/uinput", O_RDWR)) < 0
 	&& (fd = open("/dev/input/uinput", O_RDWR)) < 0
 	&& (fd = open("/dev/uinput", O_RDWR)) < 0) {
@@ -364,32 +407,60 @@ int OpenUInput(void)
 
     memset(&device, 0, sizeof(device));
 
-    //  sets the name of our device
+    //	sets the name of our device
     strncpy(device.name, "ALE OneHand Keyboard", UINPUT_MAX_NAME_SIZE);
 
-    //  its bus
+    //	its bus
     device.id.bustype = BUS_USB;
 
-    //  and vendor id/product id/version
+    //	and vendor id/product id/version
     device.id.vendor = 0x414C;
     device.id.product = 0x4F48;
     device.id.version = 0x0001;
 
-    //  inform that we'll generate key events
+    device.absmin[ABS_X] = 0;
+    device.absmin[ABS_Y] = 0;
+    device.absmax[ABS_X] = 1023;
+    device.absmax[ABS_Y] = 1023;
+
+    device.absfuzz[ABS_X] = 4;
+    device.absfuzz[ABS_Y] = 4;
+    device.absflat[ABS_X] = 2;
+    device.absflat[ABS_Y] = 2;
+
+    //	mouse emulation
+    //
+    //	inform that we'll generate relative axis events
+    ioctl(fd, UI_SET_EVBIT, EV_REL);
+    //ioctl(fd, UI_SET_EVBIT, EV_SYN);
+    ioctl(fd, UI_SET_RELBIT, REL_X);
+    ioctl(fd, UI_SET_RELBIT, REL_Y);
+
+#if 0
+    ioctl(fd, UI_SET_EVBIT, EV_ABS);
+    ioctl(fd, UI_SET_ABSBIT, ABS_X);
+    ioctl(fd, UI_SET_ABSBIT, ABS_Y);
+#endif
+
+    //	inform that we'll generate key events
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
 
-    //  set key events we can generate (in this case, all)
+    //	set key events we can generate (in this case, all)
     for (i = 1; i < /*KEY_MAX */ 255; i++) {
 	ioctl(fd, UI_SET_KEYBIT, i);
     }
 
-    //  write down information for creating a new device
+    ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
+    ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT);
+    ioctl(fd, UI_SET_KEYBIT, BTN_MIDDLE);
+
+    //	write down information for creating a new device
     if (write(fd, &device, sizeof(struct uinput_user_dev)) < 0) {
 	perror("write");
 	close(fd);
 	return -1;
     }
-    //  actually creates the device
+    //	actually creates the device
     if (ioctl(fd, UI_DEV_CREATE) < 0) {
 	perror("ioctl(UI_DEV_CREATE)");
 	close(fd);
@@ -400,7 +471,7 @@ int OpenUInput(void)
 }
 
 //
-//      Send keydown event
+//	Send keydown event
 //
 int UInputKeydown(int fd, int code)
 {
@@ -416,7 +487,7 @@ int UInputKeydown(int fd, int code)
 }
 
 //
-//      Send keyup event
+//	Send keyup event
 //
 int UInputKeyup(int fd, int code)
 {
@@ -432,7 +503,7 @@ int UInputKeyup(int fd, int code)
 }
 
 //
-//      Close UInput
+//	Close UInput
 //
 void CloseUInput(int fd)
 {
@@ -442,17 +513,17 @@ void CloseUInput(int fd)
 }
 
 //----------------------------------------------------------------------------
-//      Highlevel
+//	Highlevel
 //----------------------------------------------------------------------------
 
 //
-//      Show LED.
+//	Show LED.
 //
 void ShowLED(int num, int state)
 {
     int i;
 
-    //  Search device for LEDs.
+    //	Search device for LEDs.
     for (i = 0; i < InputFdsN; ++i) {
 	if (InputLEDs[i]) {
 	    // printf("LED: %d\n", InputLEDs[i] );
@@ -462,7 +533,7 @@ void ShowLED(int num, int state)
 }
 
 //
-//      Input read
+//	Input read
 //
 void InputRead(int did, int fd)
 {
@@ -491,22 +562,28 @@ void InputRead(int did, int fd)
 	    // Ignore
 	    break;
 	case EV_ABS:			// ABS event parse on.
-	    printf("Event Type(%d,%d,%d) abs\n", ev.type, ev.code,
+	    Debug(1, "Event Type(%d,%d,%d) abs\n", ev.type, ev.code, ev.value);
+#if 0
+	    ev.type = EV_REL;
+	    ev.code -= 512;
+	    if (write(UInputFd, &ev, sizeof(ev)) != sizeof(ev)) {
+		perror("write");
+	    }
+#endif
+	    break;
+
+	default:
+	    Debug(1, "Event Type(%d,%d,%d) unsupported\n", ev.type, ev.code,
 		ev.value);
 	    if (write(UInputFd, &ev, sizeof(ev)) != sizeof(ev)) {
 		perror("write");
 	    }
 	    break;
-
-	default:
-	    printf("Event Type(%d,%d,%d) unsupported\n", ev.type, ev.code,
-		ev.value);
-	    break;
     }
 }
 
 //
-//      Event Loop
+//	Event Loop
 //
 void EventLoop(void)
 {
@@ -540,7 +617,7 @@ void EventLoop(void)
 }
 
 //
-//      Key out
+//	Key out
 //
 void KeyOut(int key, int pressed)
 {
@@ -558,7 +635,7 @@ void KeyOut(int key, int pressed)
 }
 
 //
-//      Show firework. No time lost, need some delay to release start keys.
+//	Show firework. No time lost, need some delay to release start keys.
 //
 void Firework(void)
 {
@@ -589,7 +666,7 @@ void Firework(void)
 }
 
 //
-//      List supported devices
+//	List supported devices
 //
 static void ListSupportedDevices(void)
 {
@@ -603,123 +680,162 @@ static void ListSupportedDevices(void)
     }
 }
 
+#define VERSION	"ALE one-hand keyboard daemon Version 0.06"
+
 //
-//      Main entry point.
+//	Main entry point.
 //
 int main(int argc, char **argv)
 {
     int i;
     int ufd;
-    int debugtable;
+    int background;
+    const char *save;
     const char *lang;
 
     lang = "de";			// My choice :>
-    debugtable = 0;
+    background = 0;
+    save = NULL;
+    SysLog = 0;
 
-    printf("ALE one-hand keyboard daemon Version 0.05\n");
     //
-    //  Arguments:
-    //          -l loading keyboard mapping.
-    //          -d wich device
+    //	Parse arguments:
+    //		-l loading keyboard mapping.
+    //		-d wich device
+    //		...
     //
     for (;;) {
-	switch (getopt(argc, argv, "DLl:d:p:s:v:h?")) {
+	switch (getopt(argc, argv, "DLbd:l:np:s:v:h?")) {
 	    case EOF:
 		break;
+	    case 'b':			// background
+		background = 1;
+		SysLog = 1;
+		continue;
 	    case 'd':			// device
 		UseDev = optarg;
 		continue;
 	    case 'l':			// language
 		if (strlen(optarg) != 2) {
-		    printf("Use 2 character language codes. FE. 'de', 'us'\n");
+		    fprintf(stderr,
+			"%s\nUse 2 character language codes. FE. 'de', 'us'\n",
+			VERSION);
 		    exit(-1);
 		}
 		lang = optarg;
 		continue;
+	    case 'n':			// no leds
+		NoLed = 1;
+		continue;
 	    case 'p':			// product id
 		UseProduct = strtol(optarg, NULL, 0);
 		continue;
-	    case 's':
-		// FIXME: hack
-		AOHKSetupConvertTable(InputDevices[0].ConvertTable);
-		AOHKSetLanguage(lang);
-		AOHKSaveTable(optarg);
-		exit(-1);
+	    case 's':			// save internal tables
+		save = optarg;
+		continue;
 	    case 'v':			// vendor id
 		UseVendor = strtol(optarg, NULL, 0);
 		continue;
-	    case 'D':
-		debugtable = 1;
+	    case 'D':			// debug
+		DebugLevel++;
 		continue;
 	    case 'L':			// list
 		ListDevices = 1;
 		continue;;
 
-	    case 'h':
-		printf("Usage: %s [OPTIONs]... [FILEs]...\t"
+	    case '?':
+	    case 'h':			// help usage
+		printf("%s\nUsage: %s [OPTIONs]... [FILEs]...\t"
 		    "load specified file(s)\n"
-		    "   or: %s [OPTIONs]... -\t\tread mapping from stdin\n"
+		    "	or: %s [OPTIONs]... -\t\tread mapping from stdin\n"
 		    "Options:\n" "-h\tPrint this page\n"
+		    "-b\tBackground, run as daemon\n"
 		    "-L\tList all available input devices\n"
-		    "-l lang\tUse internal language table (de,us)\n"
+		    "-D\tIncrease debug level\n"
 		    "-d dev\tUse only this input device\n"
 		    "-v id\tAlso use the input device with vendor id\n"
 		    "-p id\tAlso use the input device with product id\n"
-		    "-s file\tSave internal tables\n", argv[0], argv[0]);
-		printf("Supported Inputdevices: ");
+		    "-n\tNo leds, some control goes wired with leds\n"
+		    "-l lang\tUse internal language table (de,us)\n"
+		    "-s file\tSave internal tables\nSupported Inputdevices: ",
+		    VERSION, argv[0], argv[0]);
 		ListSupportedDevices();
 		printf("\n");
 		exit(0);
 	    case ':':
-		printf("Missing argument for option '%c'\n", optopt);
+		fprintf(stderr, "%s\nMissing argument for option '%c'\n",
+		    VERSION, optopt);
 		exit(-1);
 	    default:
-		printf("Unkown option '%c'\n", optopt);
+		fprintf(stderr, "%s\nUnkown option '%c'\n", VERSION, optopt);
 		exit(-1);
 	}
 	break;
     }
 
     //
-    //  Load language defaults.
+    //	Background
+    //
+    if (background) {
+	if (daemon(0, 0)) {
+	    perror(argv[0]);
+	    exit(-1);
+	}
+    }
+
+    InitDebug();
+    Debug(0, "%s\n", VERSION);
+
+    //
+    //	Load language defaults.
     //
     AOHKSetLanguage(lang);
 
     //
-    //  Remaining files load as keymap.
+    //	Remaining files load as keymap.
     //
     for (i = optind; i < argc; ++i) {
 	NoConvertTable = 1;
 	AOHKLoadTable(argv[i]);
     }
 
-    sleep(1);				// sleep 1s for key release
+    if (save) {				// save resulting tables and exit
+	AOHKSaveTable(save);
+	exit(-1);
+    }
 
+    //
+    //	Open input devices
+    //
+    sleep(1);				// sleep 1s for key release
     if (OpenEvent()) {
 	exit(-1);
     }
     //
-    //  For debug save current mapping.
+    //	Open output device
     //
-    if (debugtable) {
-	AOHKSaveTable("debug.map");
-    }
-
     ufd = OpenUInput();
-    if (ufd>=0) {
+    if (ufd >= 0) {
 	UInputFd = ufd;
-	printf("Press SPECIAL 5 to exit\n");
-	//Firework();
+	if (!background && !SysLog) {
+	    printf("Press SPECIAL 5 to exit\n");
+	}
+	Firework();
 	EventLoop();
 
 	CloseUInput(ufd);
     }
+    // FIXME: Key relase got as event
+    sleep(1);				// sleep 1s for key release
+
+    //
+    //	Close input devices, cleanup
+    //
     for (i = 0; i < InputFdsN; ++i) {
 	close(InputFds[i]);
     }
 
-    // FIXME: Key relase got as event
-    sleep(1);				// sleep 1s for key release
+    ExitDebug();
 
     return 0;
 }
