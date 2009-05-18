@@ -1,7 +1,7 @@
 
 CC=	gcc
-CFLAGS=	-g -pipe -W -Wall -W
-#CFLAGS=	-g -Os -pipe -W -Wall -W
+#CFLAGS=	-g -pipe -W -Wall -W
+CFLAGS=	-g -Os -pipe -W -Wall -W
 
 OBJS=	daemon.o aohk.o
 HDRS=	aohk.h
@@ -19,12 +19,22 @@ dist:
 	one-hand/*.h one-hand/Makefile one-hand/*.txt \
 	one-hand/aohk-refcard.svgz one-hand/aohk-refcard.png \
 	one-hand/us.default.map one-hand/de.default.map \
-	one-hand/pc102leftside.map \
+	one-hand/q1.map one-hand/pc102leftside.map \
 	one-hand/pc102numpad.map one-hand/pc102rotated.map \
 	one-hand/o2.typ
 
+indent:
+	for i in $(OBJS:.o=.c) $(HDRS); do \
+		indent $$i; unexpand -a $$i > $$i.up; mv $$i.up $$i; \
+	done
 clean:
 	-rm *.o *~
 
 clobber:	clean
 	rm aohk-daemon
+
+install:	all
+	install -d /usr/local/bin
+	install -d /usr/local/lib/aohk
+	install -s aohk-daemon /usr/local/bin
+	install *.map /usr/local/lib/aohk
