@@ -12,7 +12,9 @@ U1 - U8	are the user definable keys (USR1,...USR8)
 #	is the repeat key (REPEAT)
 1 - 9	are the number keys (NUMBER)
 
+-----------------------------------------------------------------------------
 The Keys:
+========
 
 NUMBER 1 - 9
 ============
@@ -125,12 +127,13 @@ Modes
 =====
 
 Normal mode:
+-----------
 
 In the normal mode pressing two keys in sequence generates an input. All above
 handles the normal mode.
 
------------------------------------------------------------------------------
 Cursor-mode:
+-----------
 
 Entered by holding down the REPEAT key (#).
 
@@ -140,8 +143,8 @@ When you keep holding down the repeat key (#), all number keys are now direct
 cursor keys. (4 is cursor left, while holding # down). This saves some key
 presses while scrolling.
 
------------------------------------------------------------------------------
 Game-mode:
+---------
 
 Entered by pressing the MACRO key (*) and the REPEAT key (#) together.
 
@@ -161,8 +164,8 @@ The default mapping is:
 
 RST: Return to normal mode.
 
------------------------------------------------------------------------------
 Number-mode:
+-----------
 
 Entered by pressing the MACRO key (*) followed by the MACRO key (*).
 
