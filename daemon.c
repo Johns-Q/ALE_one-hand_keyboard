@@ -803,7 +803,6 @@ int main(int argc, char **argv)
 	AOHKSaveTable(save);
 	exit(-1);
     }
-
     //
     //	Open input devices
     //
