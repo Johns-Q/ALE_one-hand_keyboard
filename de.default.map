@@ -14,24 +14,7 @@
 //
 //	$Id$
 
-//	Converts input keys to internal symbols
-convert:
-Tab       	-> USR1
-q         	-> 7
-w         	-> 8
-e         	-> 9
-r         	-> USR3
-a         	-> 4
-s         	-> 5
-d         	-> 6
-f         	-> USR4
-LeftShift 	-> #
-z         	-> 1
-x         	-> 2
-c         	-> 3
-LeftAlt   	-> *
-Space     	-> 0
-CapsLock  	-> USR2
+//	Use: aohk-daemon de.default.map pc102leftside.map
 
 //	Mapping of internal symbol sequences to keys
 mapping:
@@ -365,7 +348,7 @@ USR8	-> QUAL RightMeta
 0#USR6	-> QUAL RightCtrl 
 0#USR7	-> QUAL RightAlt 
 0#USR8	-> QUAL RightMeta 
-//	game *# key prefix
+//	game mode *# key prefix
 *#0	-> QUOTE
 *#1	-> z
 *#2	-> x
@@ -387,7 +370,7 @@ USR8	-> QUAL RightMeta
 *#USR7	-> F3
 *#USR8	-> F4
 *#SPECIAL	-> 1
-//	quote game 0*# key prefix
+//	quote game mode 0*# key prefix
 0*#0	-> Space
 0*#1	-> v
 0*#2	-> b
@@ -409,6 +392,28 @@ USR8	-> QUAL RightMeta
 0*#USR7	-> F7
 0*#USR8	-> F8
 0*#SPECIAL	-> 5
+//	number mode ** key prefix
+**0	-> KP_Enter
+**1	-> KP_1
+**2	-> KP_2
+**3	-> KP_3
+**4	-> KP_4
+**5	-> KP_5
+**6	-> KP_6
+**7	-> KP_7
+**8	-> KP_8
+**9	-> KP_9
+**#	-> KP_0
+***	-> KP_Period
+**USR1	-> KP_Divide
+**USR2	-> KP_Multiply
+**USR3	-> KP_Subtract
+**USR4	-> KP_Add
+**USR5	-> ESC
+**USR6	-> LeftCtrl
+**USR7	-> LeftAlt
+**USR8	-> BackSpace
+**SPECIAL	-> RESET
 //	# Macro strings * key prefix
 macro:
 *10	-> QUOTE
