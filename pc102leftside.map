@@ -15,7 +15,7 @@
 //	$Id$
 
 //-----------------------------------------------------------------------------
-// Left hand: German keyboard left side ^ 1 2 3 4		
+// Left hand: Keyboard left side ^ 1 2 3 4		
 // .---,.---,.---,.---,.---,		|
 // | S || U2|| U3|| U4|| U5|		|	Special:        ^
 // `---'`---'`---'`---'`---'		|	Quote:		SPACE
@@ -23,13 +23,13 @@
 // |  U1 || 7 || 8 || 9 || U6|		|	Shift:		TAB
 // `-----'`---'`---'`---'`---'		|	Ctrl:		1
 //          .---,.---,.---,.---,	|	Alt:		2
-//          | 4 || 5 || 6 || U7|	|	GUI:		3
+//   #      | 4 || 5 || 6 || U7|	|	GUI:		3
 //          `---'`---'`---'`---'	|	MACRO:		Left ALT
 // .----,     .---,.---,.---,.---,	|
-// | #  |     | 1 || 2 || 3 || U8|	|	Special used as commands prefix
+// | #  |  #  | 1 || 2 || 3 || U8|	|	Special used as commands prefix
 // `----'     `---'`---'`---'`---'	|	Quote is shift key (second set)
 //              .----,.----------...	|	Repeat repeats the last key
-//              |  * ||     0		|	Shift/Ctrl/Alt/GUI are just the
+//   #          |  * ||     0		|	Shift/Ctrl/Alt/GUI are just the
 //              `----'`----------...	|	modifier to be used with mouse.
 //-----------------------------------------------------------------------------
 
@@ -51,6 +51,7 @@ f         	-> USR7
 `         	-> SPECIAL
 LeftShift 	-> #
 LeftCtrl   	-> #
+<   		-> #
 z         	-> 1
 x         	-> 2
 c         	-> 3
