@@ -38,7 +38,8 @@ Input driver of your keyboard hid / usb / bluetooth.
 Supported input devices:
 -----------------------
 Nostromo(TM) SpeedPad n52
-
+Saitek's Pro Gamer Command Unit
+PS/2 PC Keyboard
 
 How to build:
 ------------
