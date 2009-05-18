@@ -2,26 +2,26 @@
 
 /**@name aohk.h	-	ALE OneHand Keyboard headerfile.	*/
 //
-//      Copyright (c) 2007 by Lutz Sammer.  All Rights Reserved.
+//	Copyright (c) 2007 by Lutz Sammer.  All Rights Reserved.
 //
-//      Contributor(s):
+//	Contributor(s):
 //
-//      This file is part of ALE one-hand keyboard
+//	This file is part of ALE one-hand keyboard
 //
-//      This program is free software; you can redistribute it and/or modify
-//      it under the terms of the GNU General Public License as published by
-//      the Free Software Foundation; only version 2 of the License.
+//	This program is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; only version 2 of the License.
 //
-//      This program is distributed in the hope that it will be useful,
-//      but WITHOUT ANY WARRANTY; without even the implied warranty of
-//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//      GNU General Public License for more details.
+//	This program is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
 //
-//      $Id$
+//	$Id$
 ////////////////////////////////////////////////////////////////////////////
 
 //
-//      Internal used keys.
+//	Internal used keys.
 //
 enum
 {
@@ -50,6 +50,8 @@ enum
     OH_USR_8,				// keypad bs
 
     OH_SPECIAL,				// keypad NUM-LOCK
+
+    OH_NOP,				// no function
 };
 
 extern int Timeout;			// out: timeout used
