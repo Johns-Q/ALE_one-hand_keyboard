@@ -1,3 +1,5 @@
-aohk-daemon
+chaos
+aohkd
+html
 *.o
 *~

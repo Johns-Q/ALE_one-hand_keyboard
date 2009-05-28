@@ -19,6 +19,8 @@
 ##	$Id$
 ############################################################################
 
+GIT_REV =       "`git describe --always 2>/dev/null`"
+
 CC=	gcc
 #CFLAGS=	-g -pipe -W -Wall -W
 CFLAGS=	-g -Os -pipe -W -Wall -W
@@ -26,22 +28,15 @@ CFLAGS=	-g -Os -pipe -W -Wall -W
 OBJS=	daemon.o aohk.o
 HDRS=	aohk.h
 
-all:	aohk-daemon
+all:	aohkd
 
 aohk.o daemon.o:	aohk.h
 
-aohk-daemon:	daemon.o aohk.o
+aohkd:	daemon.o aohk.o
 	$(CC) -o $@ $^
 
-dist:
-	cd ..; \
-	tar -czf "one-hand/aohk-src-`date +%y%m%d`.tar.gz" one-hand/*.c \
-	one-hand/*.h one-hand/Makefile one-hand/*.txt \
-	one-hand/aohk-refcard.svgz one-hand/aohk-refcard.png \
-	one-hand/us.default.map one-hand/de.default.map \
-	one-hand/q1.map one-hand/pc102leftside.map \
-	one-hand/pc102numpad.map one-hand/pc102rotated.map \
-	one-hand/o2.typ
+#----------------------------------------------------------------------------
+#	Developer tools
 
 indent:
 	for i in $(OBJS:.o=.c) $(HDRS); do \
@@ -51,10 +46,31 @@ clean:
 	-rm *.o *~
 
 clobber:	clean
-	rm aohk-daemon
+	rm aohkd
+
+#----------------------------------------------------------------------------
+
+.PHONY: doc
+
+doc:	$(SRCS) $(HDRS) aohkd.doxygen
+	(cat aohkd.doxygen;\
+	echo "PROJECT_NUMBER=0.06 (GIT-$(GIT_REV))") | doxygen -
+
+DISTDIR=	aohk-`date +%y%m%d`
+FILES=	Makefile aohk-refcard.txt aohk.txt de.doc.txt doc.txt readme.txt \
+	aohk-refcard.svgz aohk-refcard.png \
+	us.default.map de.default.map pc102leftside.map pc102numpad.map \
+	pc102rotated.map q1.map \
+	o2.typ aohk.map.5 aohkd.1
+
+dist:
+	ln -s . $(DISTDIR); \
+	tar -czf "aohkd-src-`date +%y%m%d`.tar.gz" \
+	    $(addprefix $(DISTDIR)/, $(FILES) $(OBJS:.o=.c) $(HDRS)); \
+	rm $(DISTDIR)
 
 install:	all
 	install -d /usr/local/bin
 	install -d /usr/local/lib/aohk
-	install -s aohk-daemon /usr/local/bin
+	install -s aohkd /usr/local/bin
 	install *.map /usr/local/lib/aohk

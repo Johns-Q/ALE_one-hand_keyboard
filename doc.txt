@@ -1,7 +1,34 @@
-Eine weitere Hilfstabelle:
 
-Zeichen und umgekehter Code Zeichen.
-42 ist 'a'	24 ist LeftCTRL
+	@name doc.txt	-	Help table.
+
+	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+
+	Contributor(s):
+
+	This file is part of ALE one-hand keyboard
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; only version 2 of the License.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	$Id$
+----------------------------------------------------------------------------
+
+DE:
+    Eine weitere Hilfstabelle:
+
+    Zeichen und umgekehter Code Zeichen.
+    42 ist 'a'	24 ist LeftCTRL
+EN:
+    one more help table:
+
+    character and reverse character.
+    42 is 'a' 24 is left control
 
 a 42 LeftCTRL
 b 62 -

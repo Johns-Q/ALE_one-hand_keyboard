@@ -1,24 +1,29 @@
-//
-
-/**@name daemon.c	-	Keyboard handler daemon.	*/
-//
-//	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
-//
-//	Contributor(s):
-//
-//	This file is part of ALE one-hand keyboard
-//
-//	This program is free software; you can redistribute it and/or modify
-//	it under the terms of the GNU General Public License as published by
-//	the Free Software Foundation; only version 2 of the License.
-//
-//	This program is distributed in the hope that it will be useful,
-//	but WITHOUT ANY WARRANTY; without even the implied warranty of
-//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//	GNU General Public License for more details.
-//
-//	$Id$
+///
+///	@file daemon.c	@brief	Keyboard handler daemon.
+///
+///	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+///
+///	Contributor(s):
+///
+///	This file is part of ALE one-hand keyboard
+///
+///	This program is free software; you can redistribute it and/or modify
+///	it under the terms of the GNU General Public License as published by
+///	the Free Software Foundation; only version 2 of the License.
+///
+///	This program is distributed in the hope that it will be useful,
+///	but WITHOUT ANY WARRANTY; without even the implied warranty of
+///	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+///	GNU General Public License for more details.
+///
+///	$Id$
 ////////////////////////////////////////////////////////////////////////////
+
+///
+///	@defgroup daemon The aohk daemon module.
+///
+///	Uses aohk module to filter input devices.
+///
 
 #include <linux/input.h>
 #include <linux/uinput.h>
@@ -37,122 +42,160 @@
 
 #include "aohk.h"
 
-#define SYSTEM_VENDOR_ID	0x0001	// System vendor
-#define PS2_KEYBOARD_ID		0x0001	// System keyboard
+#define SYSTEM_VENDOR_ID	0x0001	///< System vendor
+#define PS2_KEYBOARD_ID		0x0001	///< System keyboard
 
-#define BELKIN_VENDOR_ID	0x050D	// Belkin's vendor ID
-#define NOSTROMO_N52_ID		0x0815	// nostromo n52 USB ID
+#define BELKIN_VENDOR_ID	0x050D	///< Belkin's vendor ID
+#define NOSTROMO_N52_ID		0x0815	///< nostromo n52 USB ID
 
-#define CHERRY_VENDOR_ID	0x046A	// Cherry's vendor ID
-#define KEYPAD_ID		0x0014	// Keypad G84-4700 USB ID
+#define CHERRY_VENDOR_ID	0x046A	///< Cherry's vendor ID
+#define KEYPAD_ID		0x0014	///< Keypad G84-4700 USB ID
 
-#define SAITEK_VENDOR_ID	0x06A3	// Saitek's vendor ID
-#define PGCU_ID			0x80C0	// Pro Gamer Command Unit USB ID
+#define FUJSI_VENDOR_ID		0x0BF8	///< Fujitsu Siemens vendor ID
+#define KEYPAD2_ID		0x1004	///< Keypad USB ID
 
-#define APPLE_VENDOR_ID		0x05AC	// Apple vendor ID
-#define AWKB_ID			0x0209	// Wireless keyboard BT ID
-#define AAWKB_ID		0x022D	// Alu Wireless keyboard BT ID
+#define SAITEK_VENDOR_ID	0x06A3	///< Saitek's vendor ID
+#define PGCU_ID			0x80C0	///< Pro Gamer Command Unit USB ID
 
-#define	LOGITECH_VENDOR_ID	0x046D	// Logitech vendoor ID
-#define G13_ID			0xC21C	// G13 USB keyboard ID
+#define APPLE_VENDOR_ID		0x05AC	///< Apple vendor ID
+#define AWKB_ID			0x0209	///< Wireless keyboard BT ID
+#define AAKB_ID			0x021E	///< Alu keyboard USB ID
+#define AAWKB_ID		0x022D	///< Alu Wireless keyboard BT ID
 
-//
-//	Mapping from keys to internal key for nostromo N52
-//	End marked with KEY_RESERVED
-//
+#define	LOGITECH_VENDOR_ID	0x046D	///< Logitech vendoor ID
+#define G13_ID			0xC21C	///< G13 USB keyboard ID
+
+///
+///	Mapping from keys to internal key for nostromo N52
+///	End marked with KEY_RESERVED
+///
 static int N52ConvertTable[] = {
-    KEY_SPACE, OH_QUOTE,
-    KEY_Z, OH_KEY_1,
-    KEY_X, OH_KEY_2,
-    KEY_C, OH_KEY_3,
-    KEY_A, OH_KEY_4,
-    KEY_S, OH_KEY_5,
-    KEY_D, OH_KEY_6,
-    KEY_Q, OH_KEY_7,
-    KEY_W, OH_KEY_8,
-    KEY_E, OH_KEY_9,
-    KEY_LEFTSHIFT, OH_REPEAT,
+    KEY_SPACE, AOHK_KEY_0,
+    KEY_Z, AOHK_KEY_1,
+    KEY_X, AOHK_KEY_2,
+    KEY_C, AOHK_KEY_3,
+    KEY_A, AOHK_KEY_4,
+    KEY_S, AOHK_KEY_5,
+    KEY_D, AOHK_KEY_6,
+    KEY_Q, AOHK_KEY_7,
+    KEY_W, AOHK_KEY_8,
+    KEY_E, AOHK_KEY_9,
+    KEY_LEFTSHIFT, AOHK_KEY_HASH,
 
-    KEY_LEFTALT, OH_MACRO,
+    KEY_LEFTALT, AOHK_KEY_STAR,
 
-    KEY_TAB, OH_USR_1,
-    KEY_CAPSLOCK, OH_USR_2,
-    KEY_R, OH_USR_3,
-    //KEY_F, OH_USR_4,
-    //KEY_LEFT, OH_USR_5,
-    //KEY_UP, OH_USR_6,
-    //KEY_RIGHT, OH_USR_7,
-    //KEY_DOWN, OH_USR_8,
-    KEY_F, OH_SPECIAL,
+    KEY_TAB, AOHK_KEY_USR_1,
+    KEY_CAPSLOCK, AOHK_KEY_USR_2,
+    KEY_R, AOHK_KEY_USR_3,
+    //KEY_F, AOHK_KEY_USR_4,
+    //KEY_LEFT, AOHK_KEY_USR_5,
+    //KEY_UP, AOHK_KEY_USR_6,
+    //KEY_RIGHT, AOHK_KEY_USR_7,
+    //KEY_DOWN, AOHK_KEY_USR_8,
+    KEY_F, AOHK_KEY_SPECIAL,
     KEY_RESERVED, KEY_RESERVED
 };
 
-//
-//	Mapping from keys to internal key for normal keyboard.
-//	typing on the left side of keyboard with left hand.
-//	End marked with KEY_RESERVED
-//
+///
+///	Mapping from keys to internal key for normal keyboard.
+///	typing on the left side of keyboard with left hand.
+///	End marked with KEY_RESERVED
+///
 static int PC102ConvertTable[] = {
-    KEY_SPACE, OH_QUOTE,
-    KEY_Z, OH_KEY_1,
-    KEY_X, OH_KEY_2,
-    KEY_C, OH_KEY_3,
-    KEY_A, OH_KEY_4,
-    KEY_S, OH_KEY_5,
-    KEY_D, OH_KEY_6,
-    KEY_Q, OH_KEY_7,
-    KEY_W, OH_KEY_8,
-    KEY_E, OH_KEY_9,
-    KEY_LEFTSHIFT, OH_REPEAT,
-    KEY_CAPSLOCK, OH_REPEAT,
-    KEY_LEFTCTRL, OH_REPEAT,
-    KEY_102ND, OH_REPEAT,
+    KEY_SPACE, AOHK_KEY_0,
+    KEY_Z, AOHK_KEY_1,
+    KEY_X, AOHK_KEY_2,
+    KEY_C, AOHK_KEY_3,
+    KEY_A, AOHK_KEY_4,
+    KEY_S, AOHK_KEY_5,
+    KEY_D, AOHK_KEY_6,
+    KEY_Q, AOHK_KEY_7,
+    KEY_W, AOHK_KEY_8,
+    KEY_E, AOHK_KEY_9,
+    KEY_LEFTSHIFT, AOHK_KEY_HASH,
+    KEY_CAPSLOCK, AOHK_KEY_HASH,
+    KEY_LEFTCTRL, AOHK_KEY_HASH,
+    KEY_102ND, AOHK_KEY_HASH,
 
-    KEY_LEFTALT, OH_MACRO,
-    KEY_LEFTMETA, OH_MACRO,
+    KEY_LEFTALT, AOHK_KEY_STAR,
+    KEY_LEFTMETA, AOHK_KEY_STAR,
 
-    KEY_TAB, OH_USR_1,
-    KEY_1, OH_USR_2,
-    KEY_2, OH_USR_3,
-    KEY_3, OH_USR_4,
-    KEY_4, OH_USR_5,
-    KEY_R, OH_USR_6,
-    KEY_F, OH_USR_7,
-    KEY_V, OH_USR_8,
-    KEY_GRAVE, OH_SPECIAL,
+    KEY_TAB, AOHK_KEY_USR_1,
+    KEY_1, AOHK_KEY_USR_2,
+    KEY_2, AOHK_KEY_USR_3,
+    KEY_3, AOHK_KEY_USR_4,
+    KEY_4, AOHK_KEY_USR_5,
+    KEY_R, AOHK_KEY_USR_6,
+    KEY_F, AOHK_KEY_USR_7,
+    KEY_V, AOHK_KEY_USR_8,
+    KEY_GRAVE, AOHK_KEY_SPECIAL,
     KEY_RESERVED, KEY_RESERVED
 };
 
-//
-//	Mapping from keys to internal key for normal keyboard.
-//	typing with a number/key pad.
-//	End marked with KEY_RESERVED
-//
+///
+///	Mapping from keys to internal key for normal keyboard.
+///	typing with a number/key pad.
+///	End marked with KEY_RESERVED
+///
 static int NumpadConvertTable[] = {
-    KEY_KPENTER, OH_QUOTE,
-    KEY_KP1, OH_KEY_1,
-    KEY_KP2, OH_KEY_2,
-    KEY_KP3, OH_KEY_3,
-    KEY_KP4, OH_KEY_4,
-    KEY_KP5, OH_KEY_5,
-    KEY_KP6, OH_KEY_6,
-    KEY_KP7, OH_KEY_7,
-    KEY_KP8, OH_KEY_8,
-    KEY_KP9, OH_KEY_9,
-    KEY_KP0, OH_REPEAT,
+    KEY_KPENTER, AOHK_KEY_0,
+    KEY_KP1, AOHK_KEY_1,
+    KEY_KP2, AOHK_KEY_2,
+    KEY_KP3, AOHK_KEY_3,
+    KEY_KP4, AOHK_KEY_4,
+    KEY_KP5, AOHK_KEY_5,
+    KEY_KP6, AOHK_KEY_6,
+    KEY_KP7, AOHK_KEY_7,
+    KEY_KP8, AOHK_KEY_8,
+    KEY_KP9, AOHK_KEY_9,
+    KEY_KP0, AOHK_KEY_HASH,
 
-    KEY_KPDOT, OH_MACRO,
-    KEY_KPCOMMA, OH_MACRO,
+    KEY_KPDOT, AOHK_KEY_STAR,
+    KEY_KPCOMMA, AOHK_KEY_STAR,
 
-    KEY_KPSLASH, OH_USR_1,
-    KEY_KPASTERISK, OH_USR_2,
-    KEY_KPMINUS, OH_USR_3,
-    KEY_KPPLUS, OH_USR_4,
-    KEY_ESC, OH_USR_5,
-    KEY_LEFTCTRL, OH_USR_6,
-    KEY_LEFTALT, OH_USR_7,
-    KEY_BACKSPACE, OH_USR_8,
-    KEY_NUMLOCK, OH_SPECIAL,
+    KEY_KPSLASH, AOHK_KEY_USR_1,
+    KEY_KPASTERISK, AOHK_KEY_USR_2,
+    KEY_KPMINUS, AOHK_KEY_USR_3,
+    KEY_KPPLUS, AOHK_KEY_USR_4,
+
+    KEY_ESC, AOHK_KEY_USR_5,		// extra keys on cherry keypad
+    KEY_LEFTCTRL, AOHK_KEY_USR_6,
+    KEY_LEFTALT, AOHK_KEY_USR_7,
+    KEY_BACKSPACE, AOHK_KEY_USR_8,
+
+    KEY_NUMLOCK, AOHK_KEY_SPECIAL,
+
+    KEY_RESERVED, KEY_RESERVED
+};
+
+///
+///	Mapping from keys to internal key for normal keyboard.
+///	typing with a number/key pad.
+///	End marked with KEY_RESERVED
+///
+static int Numpad2ConvertTable[] = {
+    KEY_KPENTER, AOHK_KEY_0,
+    KEY_KP1, AOHK_KEY_1,
+    KEY_KP2, AOHK_KEY_2,
+    KEY_KP3, AOHK_KEY_3,
+    KEY_KP4, AOHK_KEY_4,
+    KEY_KP5, AOHK_KEY_5,
+    KEY_KP6, AOHK_KEY_6,
+    KEY_KP7, AOHK_KEY_7,
+    KEY_KP8, AOHK_KEY_8,
+    KEY_KP9, AOHK_KEY_9,
+    KEY_KP0, AOHK_KEY_HASH,
+
+    KEY_KPDOT, AOHK_KEY_STAR,
+    KEY_KPCOMMA, AOHK_KEY_STAR,
+
+    KEY_KPSLASH, AOHK_KEY_USR_1,
+    KEY_KPASTERISK, AOHK_KEY_USR_2,
+    KEY_KPMINUS, AOHK_KEY_USR_3,
+    KEY_KPPLUS, AOHK_KEY_USR_4,
+
+    KEY_NUMLOCK, AOHK_KEY_SPECIAL,
+
     KEY_RESERVED, KEY_RESERVED
 };
 
@@ -161,60 +204,62 @@ static int NumpadConvertTable[] = {
 //	End marked with KEY_RESERVED
 //
 static int PgcuConvertTable[] = {
-    16, OH_QUOTE,
-    9, OH_KEY_1,
-    10, OH_KEY_2,
-    11, OH_KEY_3,
-    5, OH_KEY_4,
-    6, OH_KEY_5,
-    7, OH_KEY_6,
-    1, OH_KEY_7,
-    2, OH_KEY_8,
-    3, OH_KEY_9,
-    12, OH_REPEAT,
-    13, OH_REPEAT,
+    16, AOHK_KEY_0,
+    9, AOHK_KEY_1,
+    10, AOHK_KEY_2,
+    11, AOHK_KEY_3,
+    5, AOHK_KEY_4,
+    6, AOHK_KEY_5,
+    7, AOHK_KEY_6,
+    1, AOHK_KEY_7,
+    2, AOHK_KEY_8,
+    3, AOHK_KEY_9,
+    12, AOHK_KEY_HASH,
+    13, AOHK_KEY_HASH,
 
-    15, OH_MACRO,
-    21, OH_MACRO,
+    15, AOHK_KEY_STAR,
+    21, AOHK_KEY_STAR,
 
-    17, OH_USR_1,
-    18, OH_USR_2,
-    19, OH_USR_3,
-    20, OH_USR_4,
-    4, OH_SPECIAL,
+    17, AOHK_KEY_USR_1,
+    18, AOHK_KEY_USR_2,
+    19, AOHK_KEY_USR_3,
+    20, AOHK_KEY_USR_4,
+    4, AOHK_KEY_SPECIAL,
 
     // 14, 8, 22, 23. 24 unused
 
-    22, OH_NOP,				// these produce only down, when switched up
-    23, OH_NOP,
-    24, OH_NOP,
+    22, AOHK_KEY_NOP,			// these produce only down, when switched up
+    23, AOHK_KEY_NOP,
+    24, AOHK_KEY_NOP,
 
     KEY_RESERVED, KEY_RESERVED
 };
 
-//
-//	Table of supported input devices
-//
+///
+///	Table of supported input devices
+///
 struct input_device
 {
-    char *ID;
-    int Vendor;
-    int Product;
-    int *ConvertTable;
-    int Offset;				// To convert buttons!
+    const char *ID;			///< name to select this device
+    int Vendor;				///< usb/bluetooth vendor id
+    int Product;			///< usb/bluetooth product id
+    int *ConvertTable;			///< default input convert table
+    int Offset;				///< to convert buttons of joysticks
 } InputDevices[] = {
     {
     "n52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable, 0}, {
     "pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable, 0}, {
     "keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable, 0}, {
+    "keypad", FUJSI_VENDOR_ID, KEYPAD2_ID, Numpad2ConvertTable, 0}, {
     "pgcu", SAITEK_VENDOR_ID, PGCU_ID, PgcuConvertTable, 0x11F}, {
     "awkb", APPLE_VENDOR_ID, AWKB_ID, PC102ConvertTable, 0}, {
     "aawkb", APPLE_VENDOR_ID, AAWKB_ID, PC102ConvertTable, 0}, {
+    "aakb", APPLE_VENDOR_ID, AAKB_ID, PC102ConvertTable, 0}, {
     "g13", LOGITECH_VENDOR_ID, G13_ID, PC102ConvertTable, 0}, {
     NULL, 0, 0, NULL, 0}
 };
 
-#define MAX_INPUTS	32
+#define MAX_INPUTS	32		///< max input devices supported
 int InputFds[MAX_INPUTS];		///< Inputs
 int InputDid[MAX_INPUTS];		///< Input device ID
 int InputLEDs[MAX_INPUTS];		///< Inputs LED support
@@ -223,7 +268,7 @@ int InputFdsN;				///< Number of Inputs
 int UInputFd;				///< Output
 
 int Timeout = 1000;			///< in: timeout used
-int Exit;				///< in: exit
+int Exit;				///< in: exit program flag
 
 const char *UseDev;			///< Wanted device
 int UseVendor;				///< Wanted vendor
@@ -239,9 +284,9 @@ int SysLog;				///< logging to syslog
 //	Debug / Logging
 //----------------------------------------------------------------------------
 
-//
-//	Debug output function.
-//
+///
+///	Debug output function.
+///
 #define Debug(level, fmt...) \
     do { if (level<DebugLevel) { printf(fmt); } } while (0)
 
@@ -255,6 +300,12 @@ int SysLog;				///< logging to syslog
 
 ///
 ///	Check if device supports LEDs.
+///
+///	@param fd	File descriptor of input device
+///
+///	@returns True if device supports setting leds.
+///
+///	@note if #NoLeds is set, this function returns always false.
 ///
 int EventCheckLEDs(int fd)
 {
@@ -270,9 +321,9 @@ int EventCheckLEDs(int fd)
     return 0;
 }
 
-//
-//	Open input event device.
-//
+///
+///	Open input event device.
+///
 int OpenEvent(void)
 {
     char dev[32];
@@ -327,7 +378,6 @@ int OpenEvent(void)
 		    if (UseDev && strcasecmp(UseDev, InputDevices[j].ID)) {
 			continue;
 		    }
-		    printf("%s\n", UseDev);
 		    if (InputDevices[j].Vendor == info.vendor
 			&& InputDevices[j].Product == info.product) {
 			Debug(1,
@@ -369,9 +419,9 @@ int OpenEvent(void)
     return 0;
 }
 
-//
-//	Turn LED on/off.
-//
+///
+///	Turn LED on/off.
+///
 void EventLEDs(int fd, int num, int state)
 {
     struct input_event ev;
@@ -388,9 +438,9 @@ void EventLEDs(int fd, int num, int state)
 //	Uinput
 //----------------------------------------------------------------------------
 
-//
-//	Open uinput device
-//
+///
+///	Open uinput device
+///
 int OpenUInput(void)
 {
     int i;
@@ -470,9 +520,9 @@ int OpenUInput(void)
     return fd;
 }
 
-//
-//	Send keydown event
-//
+///
+///	Send keydown event
+///
 int UInputKeydown(int fd, int code)
 {
     struct input_event event;
@@ -486,9 +536,9 @@ int UInputKeydown(int fd, int code)
     return write(fd, &event, sizeof(event));
 }
 
-//
-//	Send keyup event
-//
+///
+///	Send keyup event
+///
 int UInputKeyup(int fd, int code)
 {
     struct input_event event;
@@ -502,9 +552,9 @@ int UInputKeyup(int fd, int code)
     return write(fd, &event, sizeof(event));
 }
 
-//
-//	Close UInput
-//
+///
+///	Close UInput
+///
 void CloseUInput(int fd)
 {
     if (ioctl(fd, UI_DEV_DESTROY) < 0) {
@@ -516,9 +566,9 @@ void CloseUInput(int fd)
 //	Highlevel
 //----------------------------------------------------------------------------
 
-//
-//	Show LED.
-//
+///
+///	Show LED.
+///
 void ShowLED(int num, int state)
 {
     int i;
@@ -532,9 +582,9 @@ void ShowLED(int num, int state)
     }
 }
 
-//
-//	Input read
-//
+///
+///	Input read
+///
 void InputRead(int did, int fd)
 {
     struct input_event ev;
@@ -582,9 +632,9 @@ void InputRead(int did, int fd)
     }
 }
 
-//
-//	Event Loop
-//
+///
+///	Event Loop
+///
 void EventLoop(void)
 {
     struct pollfd fds[MAX_INPUTS + 1];
@@ -616,9 +666,9 @@ void EventLoop(void)
     }
 }
 
-//
-//	Key out
-//
+///
+///	Key out
+///
 void KeyOut(int key, int pressed)
 {
     struct input_event event;
@@ -634,9 +684,9 @@ void KeyOut(int key, int pressed)
     }
 }
 
-//
-//	Show firework. No time lost, need some delay to release start keys.
-//
+///
+///	Show firework. No time lost, need some delay to release start keys.
+///
 void Firework(void)
 {
     static char led_firework[][3] = {
@@ -665,9 +715,9 @@ void Firework(void)
     }
 }
 
-//
-//	List supported devices
-//
+///
+///	List supported devices
+///
 static void ListSupportedDevices(void)
 {
     int j;
@@ -682,9 +732,9 @@ static void ListSupportedDevices(void)
 
 #define VERSION	"ALE one-hand keyboard daemon Version 0.06"
 
-//
-//	Main entry point.
-//
+///
+///	Main entry point.
+///
 int main(int argc, char **argv)
 {
     int i;
@@ -705,7 +755,7 @@ int main(int argc, char **argv)
     //		...
     //
     for (;;) {
-	switch (getopt(argc, argv, "DLbd:l:np:s:v:h?")) {
+	switch (getopt(argc, argv, "DLQ:bd:l:np:s:v:h?")) {
 	    case EOF:
 		break;
 	    case 'b':			// background
@@ -739,6 +789,11 @@ int main(int argc, char **argv)
 	    case 'D':			// debug
 		DebugLevel++;
 		continue;
+	    case 'Q':			// quiet
+		if (DebugLevel) {
+		    DebugLevel--;
+		}
+		continue;
 	    case 'L':			// list
 		ListDevices = 1;
 		continue;;
@@ -747,7 +802,7 @@ int main(int argc, char **argv)
 	    case 'h':			// help usage
 		printf("%s\nUsage: %s [OPTIONs]... [FILEs]...\t"
 		    "load specified file(s)\n"
-		    "	or: %s [OPTIONs]... -\t\tread mapping from stdin\n"
+		    "	or: %s [OPTIONs]... -\tread mapping from stdin\n"
 		    "Options:\n" "-h\tPrint this page\n"
 		    "-b\tBackground, run as daemon\n"
 		    "-L\tList all available input devices\n"
@@ -757,7 +812,7 @@ int main(int argc, char **argv)
 		    "-p id\tAlso use the input device with product id\n"
 		    "-n\tNo leds, some control goes wired with leds\n"
 		    "-l lang\tUse internal language table (de,us)\n"
-		    "-s file\tSave internal tables\nSupported Inputdevices: ",
+		    "-s file\tSave internal tables\nSupported input devices: ",
 		    VERSION, argv[0], argv[0]);
 		ListSupportedDevices();
 		printf("\n");

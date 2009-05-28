@@ -1,3 +1,24 @@
+
+	@name aohk.txt	-	ALE one-hand keyboard documentation.
+
+	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+
+	Contributor(s):
+
+	This file is part of ALE one-hand keyboard
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; only version 2 of the License.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	$Id$
+----------------------------------------------------------------------------
+
 /////////////////////////////////////////
 // ALE one-hand keyboard documentation //
 /////////////////////////////////////////
@@ -29,10 +50,11 @@ forget, this also means that you have only a second to type the two numbers.
 Some sequences are mapped to the standard modifiers (Shift, Control, Alt,
 Gui).  When you press 24, the input 'CTRL' pressed is created, to release
 CTRL press 24 or # (repeat) again.  CTRL is automatic release with the next
-non modifier sequence.  24 78 gives the input 'CTRL-N' and CTRL is released.
+none modifier sequence.  24 78 gives the input 'CTRL-N' and CTRL is released.
 The modifier can be combined. 24 84 78 is 'CTRL-ALT-N".  After 10s are all
-modifiers automatic released.  
-81 different inputs can be entered without any extra key.
+modifiers automatic released.
+
+81 (9*9) different inputs can be entered without any extra key.
 
 To generate keyboard input two sequence keys ("1"-"9") must be pressed in
 sequence.  To type "e" the "4"-key must be pressed first, than the "5"-key.  At
@@ -51,6 +73,18 @@ at least a second.  When you press 7, than 8, the input 'N' is created.
 Written as 078 = N.  Pressing 0 after a 0, is special handled as input of '0'.
 Also some seldom used keys can be reached with quote.
 
+Pressing 0 after a number key or 0, is handled as special input.  This
+gives 10 more input.  It defaults to QUOTE state, which allows pressing
+the first key and 0 together, without worring about, which comes first.
+(078 is N and 708 is also N)
+
+You can also keep 0 pressed to write an all upper case word.
+(0 hold 78 68 32 # release 0, gives 'NULL').
+
+All uppercase characters can be enter by quote and the lowercase sequence.
+
+Additional 81 (9*9) characters can be accessed with the quote key.
+
 REPEAT #
 ========
 
@@ -58,12 +92,14 @@ The enter key (#) is the repeat key.  It repeats the last complete input.
 After you have pressed 78, the # creates the input 'n'.  This more useful
 for more complex key sequences.  24 78 creates CTRL-N, which is used by
 some editors as next line command.  24 78 # is the input "CTRL-N CTRL-N".
+
 Pressing # after a number key or 0, is handled as special input simulating
 the number key pad.  This gives 10 more input which can be created with only
 two key presses. 4# is the cursor-left-input, 0# is the insert-input.
+This can be combined with 0 (QUOTE), 04# generates the input key-pad 4.
+
 Holding down the # key, auto repeats the last sequence and enters the 
-cursor mode.  This can be combined with quote, 04# generates the input key-pad
-4.
+cursor mode.  This allows a very fast cursor movement.
 
 Don't forget the repeat key!
 For 'root' type, 15 65 # 75 (r, o, repeat o, t).
@@ -71,9 +107,13 @@ For 'root' type, 15 65 # 75 (r, o, repeat o, t).
 MACRO *
 =======
 
-The dot key (*) is the macro key. 218 macros can be stored, press * followed
-my a normal sequence, executes the sequence stored under this combination.
+The dot key (*) is the macro key. over 218 macros can be stored, press *
+followed my a normal sequence, executes the sequence stored under this
+combination.
 As default it acts as CTRL key. *78 is CTRL-N.
+
+Pressing * after a number key or 0, is handled as special input.
+This gives 10 more input which can be created with only two key presses.
 
 I plan to use it as word macros, *78 is than fe. "north".
 
@@ -98,12 +138,13 @@ Special combinations
 QUOTE + REPEAT: 0 + #
 ---------------------
 Pressing QUOTE (0) and REPEAT (#) together forms a super quote, which is a 
-third level of bindings.  Press first QUOTE and than repeat, without
+third level of bindings.  Press first QUOTE and than REPEAT, without
 releasing quote.
 
 QUOTE + MACRO: 0 + *
 --------------------
 Pressing QUOTE (0) and MACRO (*) together acts as normal Quote+CTRL.
+Currently also pressing MACRO followed by QUOTE is supported.
 
 MACRO + REPEAT: * + #
 ---------------------
@@ -175,6 +216,7 @@ numbers.  The input device acts like a normal number pad.
 Pressing the special key returns to normal-mode.
 
 #############################################################################
+German mapping example
 #############################################################################
 
 ASCII keyboard table:
@@ -328,20 +370,23 @@ Notes:
 Special-Commands:
     QUOTE + REPEAT		Must be pressed together, is super quote.
     MACRO + REPEAT		Must be pressed together, enter game-mode.
+    MACRO , REPEAT		Enter game-mode.
     MACRO, MACRO		Enter number-mode.
-    SPECIAL, QUOTE		Not needed: use ioctl. Toggle left-right hand
+    SPECIAL, QUOTE		Reset
     SPECIAL, SPECIAL 		Turn off (next SPECIAL re enables)
     SPECIAL, REPEAT		Toggle use of right-cursor
     SPECIAL, 1			Toggle only me mode. Normal keyboard disabled
     SPECIAL, 2			Double timeout
     SPECIAL, 3			Half timeout
+    SPECIAL, 4			Version as key press
     SPECIAL, 5			Exit program / turn off
     SPECIAL, 6			Game mode
     SPECIAL, 7			Number mode
     SPECIAL, 9			Turn off (re enable not possible)
-    SPECIAL, 4 or 8 or MACRO	Free to assign
+    SPECIAL, 8 or MACRO		Free to assign
 
 -----------------------------------------------------------------------------
+
 Table sorted by start key: (incomplete)
 ----------------------------
 
@@ -379,7 +424,7 @@ Table sorted by start key: (incomplete)
 `----~----~----~----' `----~----~----~----' `----~----~----~----'
 
 
-Labels for the key caps
+Labels for the keycaps
 
 .---------v---------v---------.  .--..-..--.
 | 7  n  z |BSP 8 ESC| /  c  9 |  > 7  8  9 <
@@ -395,6 +440,8 @@ Labels for the key caps
 | 1  i  w |RET 2  . | q  l  3 |  END CDN PDN
 `---------~---------~---------'  INS
 
+Expample with QUOTE.
+
 .------------v
 | F7   N   Z |
 | 7   n   z  |
@@ -408,9 +455,14 @@ Labels for the key caps
 Table sorted by code:
 ---------------------
         Normal		Quoted		SuperQuote
-00	0		-not possible-
-01x-09x	Needs an extra key-press
+#	Repeat the last sequence	Normal + ALT
+*	->macro
+*0	->macro quote
+**	->enter number mode
 0#	[INS]		-not possible-
+0*	->macro quote
+00	0		-not possible-
+01x-09x	Quoted: Needs an extra key-press
 10	----- QUOTE/RESET -----
 11	1		F1
 12	i		I
@@ -422,6 +474,7 @@ Table sorted by code:
 18	d		D
 19	(FREE)		(FREE)
 1#	[END]		KEYPAD-1
+1*	(FREE)		(FREE)
 20	----- QUOTE/RESET -----
 21	[RET]		KEYPAD-ENTER
 22	2		F2
@@ -433,6 +486,7 @@ Table sorted by code:
 28	ö		Ö
 29	!		KEYPAD-0
 2#	[CRSR-DOWN]	KEYPAD-2
+2*	(FREE)		(FREE)
 30	----- QUOTE/RESET -----
 31	q		Q
 32	l		L
@@ -444,6 +498,7 @@ Table sorted by code:
 38	f		F
 39	ü		Ü
 3#	[PAGE-DOWN]	KEYPAD-3
+3*	(FREE)		(FREE)
 40	----- QUOTE/RESET -----
 41	$		°
 42	a		A
@@ -451,21 +506,23 @@ Table sorted by code:
 44	4		F4
 45	e		E
 46	k		K
-47	%		KEYPAD-% (Double use)
+47	%		KEYPAD-% (double use)
 48	s		S
 49	x		X
 4#	[CRSR-LEFT]	KEYPAD-4
+4*	(FREE)		(FREE)
 50	----- QUOTE/RESET -----
 51	[SHIFT]		Right-[SHIFT]
-52	\ 		|
-53	(		-free-
+52	\ 		| (double use)
+53	(		(FREE)
 54	[SPC]		SHIFT-[SPC]
 55	5		F5
 56	[TAB]		SHIFT-[TAB]
 57	LEFT-[GUI]	Right-[GUI]
 58	[		}
-59	)		-free-
+59	)		(FREE)
 5#	[DELETE]	SHIFT-[DEL]
+5*	(FREE)		(FREE)
 60	----- QUOTE/RESET -----
 61	&		¤
 62	b		B
@@ -475,8 +532,9 @@ Table sorted by code:
 66	6		F6
 67	+		KEYPAD-+
 68	u		U
-69	{		-free-
+69	{		(FREE)
 6#	[CRSR-RIGHT]	KEYPAD-6
+6*	(FREE)		(FREE)
 70	----- QUOTE/RESET -----
 71	ß		PRINT
 72	h		H
@@ -488,6 +546,7 @@ Table sorted by code:
 78	n		N
 79	z		Z
 7#	[HOME]		KEYPAD-7
+7*	(FREE)		(FREE)
 80	----- QUOTE/RESET -----
 81	;		PAUSE
 82	@		` (double use)
@@ -499,15 +558,16 @@ Table sorted by code:
 88	8		F8
 89	[ESC]		SHIFT-[ESC]
 8#	[CRSR-DOWN]	KEYPAD-2
+8*	(FREE)		(FREE)
 90	----- QUOTE/RESET -----
 91	#		MENU
 92	p		P
 93	`		F12
-94	_		-free-
+94	_		(FREE)
 95	g		G
-96	}		-free-
+96	}		SPECIAL
 97	/		KEYPAD-/
 98	c		C
 99	9		F9
 9#	[PAGE-UP]	KEYPAD-9
-#	Repeat the last sequence
+9*	(FREE)		(FREE)

@@ -1,24 +1,30 @@
-//
-
-/**@name aohk.c	-	ALE OneHand Keyboard handler.	*/
-//
-//	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
-//
-//	Contributor(s):
-//
-//	This file is part of ALE one-hand keyboard
-//
-//	This program is free software; you can redistribute it and/or modify
-//	it under the terms of the GNU General Public License as published by
-//	the Free Software Foundation; only version 2 of the License.
-//
-//	This program is distributed in the hope that it will be useful,
-//	but WITHOUT ANY WARRANTY; without even the implied warranty of
-//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//	GNU General Public License for more details.
-//
-//	$Id$
+///
+///	@file aohk.c	@brief	ALE OneHand Keyboard handler.
+///
+///	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+///
+///	Contributor(s):
+///
+///	This file is part of ALE one-hand keyboard
+///
+///	This program is free software; you can redistribute it and/or modify
+///	it under the terms of the GNU General Public License as published by
+///	the Free Software Foundation; only version 2 of the License.
+///
+///	This program is distributed in the hope that it will be useful,
+///	but WITHOUT ANY WARRANTY; without even the implied warranty of
+///	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+///	GNU General Public License for more details.
+///
+///	$Id$
 ////////////////////////////////////////////////////////////////////////////
+
+///
+///	@defgroup aohk The aohk module.
+///
+///	Can be used to add single hand (finger) input to any program.
+///	Or to add alphanumeric input to any device (like remotes)
+///
 
 #include <linux/input.h>
 
@@ -30,155 +36,175 @@
 
 #include "aohk.h"
 
-#define DEFAULT
+#define DEFAULT				///< define to include default tables
 
-//
-//	States
-//	Bug alert: SecondKeys must be FirstKey+1!
-//
-enum
+///
+///	States
+///	Bug alert: SecondKeys must be FirstKey+1!
+///
+enum __aohk_states__
 {
-    OHFirstKey,				// waiting for first key
-    OHSecondKey,			// waiting for second key
-    OHQuoteFirstKey,			// have quote key, waiting for first key
-    OHQuoteSecondKey,			// have quote state, waiting for second key
-    OHSuperFirstKey,			// have super quote key, waiting for first key
-    OHSuperSecondKey,			// have super quoted state, waiting for second key
-    OHMacroFirstKey,			// have macro key, ...
-    OHMacroSecondKey,			// macro key, first key ...
-    OHMacroQuoteFirstKey,		// have macro key, ...
-    OHMacroQuoteSecondKey,		// macro key, first key ...
+    OHFirstKey,				///< waiting for first key
+    OHSecondKey,			///< waiting for second key
+    OHQuoteFirstKey,			///< have quote key, waiting for first key
+    OHQuoteSecondKey,			///< have quote state, waiting for second key
+    OHSuperFirstKey,			///< have super quote key, waiting for first key
+    OHSuperSecondKey,			///< have super quoted state, waiting for second key
+    OHMacroFirstKey,			///< have macro key, ...
+    OHMacroSecondKey,			///< macro key, first key ...
+    OHMacroQuoteFirstKey,		///< have macro key, ...
+    OHMacroQuoteSecondKey,		///< macro key, first key ...
 
-    OHGameMode,				// game mode: key = key
-    OHNumberMode,			// number mode: key = number key
-    OHSpecial,				// have seen the special key
-    OHSoftOff,				// turned off
-    OHHardOff				// 100% turned off
+    OHGameMode,				///< game mode: key = game key
+    OHNumberMode,			///< number mode: key = number key
+    OHSpecial,				///< have seen the special key
+    OHSoftOff,				///< turned off
+    OHHardOff				///< 100% turned off
 };
 
+///
+///	Key mapping typedef
+///
 typedef struct _oh_key_ OHKey;
 
+///
+///	Key mapping structure
+///
 struct _oh_key_
 {
-    unsigned char Modifier;		// modifier flags
-    unsigned char KeyCode;		// scancode
+    unsigned char Modifier;		///< modifier flags
+    unsigned char KeyCode;		///< scancode
 };
 
-static char AOHKState;			// state machine
+static char AOHKState;			///< state machine
 
-static char AOHKOnlyMe;			// enable only my keys
+static char AOHKOnlyMe;			///< enable only my keys
 
-static int AOHKDownKeys;		// bitmap pressed keys
-static unsigned char AOHKLastKey;	// last scancode got
+static int AOHKDownKeys;		///< bitmap pressed keys
+static unsigned char AOHKLastKey;	///< last scancode got
 
 //
 //	Sequences
 //
-static unsigned char AOHKRelease;	// release must be send
+static unsigned char AOHKRelease;	///< release must be send
 
-static unsigned char AOHKStickyModifier;	// sticky modifiers
-static unsigned char AOHKModifier;	// modifiers wanted
+static unsigned char AOHKStickyModifier;	///< sticky modifiers
+static unsigned char AOHKModifier;	///< modifiers wanted
 
-static unsigned char AOHKLastModifier;	// last key modifiers
-static const OHKey *AOHKLastSequence;	// last keycode
+static unsigned char AOHKLastModifier;	///< last key modifiers
+static const OHKey *AOHKLastSequence;	///< last keycode
 
-//
-//	Table: Maps input keycodes to internal keys.
-//
+///
+///	Table: Maps input keycodes to internal keys.
+///
 static unsigned char AOHKConvertTable[256];
 
 // ---------------------------------------------------
 
-//
-//	Keyboard mapping modifier
-//
-#define SHIFT	1			// keycode + SHIFT
-#define CTL	2			// keycode + CTRL
-#define ALT	4			// keycode + ALT
-#define ALTGR	8			// keycode + ALT-GR
+///
+///	Keyboard mapping modifier.
+///
+///	0x00 - 0x0F modifier and keycode
+///	0x10 0x20 0x40 free
+///	0x80 commands
+///	0xC0 macro index
+///	@{
+#define SHIFT	1			///< keycode + SHIFT
+#define CTL	2			///< keycode + CTRL
+#define ALT	4			///< keycode + ALT
+#define ALTGR	8			///< keycode + ALT-GR
 
-// remaining are available
+#define QUAL	128			///< no keycode only qualifiers
+#define STICKY	129			///< sticky qualifiers
+#define QUOTE	130			///< quote state
+#define RESET	131			///< reset state
+#define TOGAME	132			///< enter game mode
+#define TONUM	133			///< enter number mode
+#define SPECIAL	134			///< enter special mode
 
-#define QUAL	128			// no keycode only qualifiers
-#define STICKY	129			// sticky qualifiers
-#define QUOTE	130			// quote state
-#define RESET	131			// reset state
-#define TOGAME	132			// enter game mode
-#define TONUM	133			// enter number mode
-#define SPECIAL	134			// enter special mode
+#define MACRO	0xC0			///< macro index
 
-//
-//	Modifier bitmap
-//
-#define Q_SHFT_L	1		// shift left
-#define Q_CTRL_L	2		// control left
-#define Q_ALT_L		4		// alt left
-#define Q_GUI_L		8		// gui (flag) left
-#define Q_SHFT_R	16		// shift right
-#define Q_CTRL_R	32		// control right
-#define Q_ALT_R		64		// alt right
-#define Q_GUI_R		128		// gui (flag) right
+///	@}
 
-static char AOHKGameSendQuote;		// send delayed quote in game mode
+///
+///	Modifier bitmap.
+///	For QUAL/STICKY command
+///	@{
+#define Q_SHFT_L	1		///< shift left
+#define Q_CTRL_L	2		///< control left
+#define Q_ALT_L		4		///< alt left
+#define Q_GUI_L		8		///< gui (flag) left
+#define Q_SHFT_R	16		///< shift right
+#define Q_CTRL_R	32		///< control right
+#define Q_ALT_R		64		///< alt right
+#define Q_GUI_R		128		///< gui (flag) right
 
-static unsigned AOHKGamePressed;	// keys pressed in game mode
-static unsigned AOHKGameQuotePressed;	// quoted keys pressed in game mode
+///	@}
 
-#define OH_TIMEOUT	(1*1000)	// default 1s
-static int AOHKTimeout = OH_TIMEOUT;	// timeout in jiffies
+static char AOHKGameSendQuote;		///< send delayed quote in game mode
 
-static unsigned long AOHKLastJiffies;	// last key jiffy
+static unsigned AOHKGamePressed;	///< keys pressed in game mode
+static unsigned AOHKGameQuotePressed;	///< quoted keys pressed in game mode
+
+#define AOHK_TIMEOUT	(1*1000)	///< default 1s
+static int AOHKTimeout = AOHK_TIMEOUT;	///< timeout in jiffies
+
+static unsigned long AOHKLastJiffies;	///< last key jiffy
 
 //
 //	LED Macros for more hardware support
 //
-//#define SecondStateLedOn()		// led not used, only troubles
-//#define SecondStateLedOff()		// led not used, only troubles
-//#define QuoteStateLedOn()		// led not used, only troubles
-//#define QuoteStateLedOff()		// led not used, only troubles
-//#define GameModeLedOn()		// led not used, only troubles
-//#define GameModeLedOff()		// led not used, only troubles
-#define NumberModeLedOn()		// led not used, only troubles
-#define NumberModeLedOff()		// led not used, only troubles
-#define SpecialStateLedOn()		// led not used, only troubles
-#define SpecialStateLedOff()		// led not used, only troubles
+//#define SecondStateLedOn()		///< led not used, only troubles
+//#define SecondStateLedOff()		///< led not used, only troubles
+//#define QuoteStateLedOn()		///< led not used, only troubles
+//#define QuoteStateLedOff()		///< led not used, only troubles
+//#define GameModeLedOn()		///< led not used, only troubles
+//#define GameModeLedOff()		///< led not used, only troubles
+#define NumberModeLedOn()		///< led not used, only troubles
+#define NumberModeLedOff()		///< led not used, only troubles
+#define SpecialStateLedOn()		///< led not used, only troubles
+#define SpecialStateLedOff()		///< led not used, only troubles
 
-static void AOHKEnterGameMode(void);	// forward definition
-static void AOHKEnterNumberMode(void);	// forward definition
+static void AOHKEnterGameMode(void);	///< forward definition
+static void AOHKEnterNumberMode(void);	///< forward definition
+static void AOHKEnterSpecialState(void);	///< forward definition
 
-//	*INDENT-OFF*
+#define HASH_START	(9 * 10)	///< x# sequences
+#define STAR_START	(10 * 10)	///< x* sequences
+#define DOUBLE_QUOTE	(11 * 10)	///< 00 sequences
+#define USR_START	(11 * 10 + 1)	///< USR sequences
 
-//
-//	Table sequences to scancodes.
-//		The first value are the flags and modifiers.
-//		The second value is the scancode to send.
-//		Comments are the ascii output of the keyboard driver.
-//
-static OHKey AOHKTable[10*10+1+8];
+///
+///	Table sequences to scancodes.
+///		The first value are the flags and modifiers.
+///		The second value is the scancode to send.
+///		Comments are the ascii output of the keyboard driver.
+///
+static OHKey AOHKTable[11 * 10 + 1 + 8];
 
+///
+///	Table quoted sequences to scancodes.
+///		The first value are the flags and modifiers.
+///		The second value is the scancode to send.
 //
-//	Table quoted sequences to scancodes.
-//		The first value are the flags and modifiers.
-//		The second value is the scancode to send.
-//
-static OHKey AOHKQuoteTable[10*10+1+8];
+static OHKey AOHKQuoteTable[11 * 10 + 1 + 8];
 
-//
-//	Table super quoted sequences to scancodes.
-//	If we need more codes, they can be added here.
-//		The first value are the flags and modifiers.
-//		The second value is the scancode to send.
-//	FIXME:	ALT? Keycode?
-//
-static OHKey AOHKSuperTable[10*10+1+8];
+///
+///	Table super quoted sequences to scancodes.
+///	If we need more codes, they can be added here.
+///		The first value are the flags and modifiers.
+///		The second value is the scancode to send.
+///
+static OHKey AOHKSuperTable[11 * 10 + 1 + 8];
 
-//
-//	Game Table sequences to scancodes.
-//		The first value are the flags and modifiers.
-//		The second value is the scancode to send.
-//
-static OHKey AOHKGameTable[OH_SPECIAL+1] = {
+///
+///	Game table key to scancodes.
+///		The first value are the flags and modifiers.
+///		The second value is the scancode to send.
+///
+static OHKey AOHKGameTable[AOHK_KEY_SPECIAL + 1] = {
 #ifdef DEFAULT
+//	*INDENT-OFF*
 // This can't be used, quote is used insteed.
 /* 0 */ { QUOTE,	KEY_SPACE },	// SPACE
 /* 1 */ { 0,		KEY_Z	},	// y
@@ -207,14 +233,16 @@ static OHKey AOHKGameTable[OH_SPECIAL+1] = {
 /* ? */ { 0,		KEY_F4	},	// F4
 
 /*NUM*/ { 0,		KEY_1	},	// 1
+//	*INDENT-ON*
 #endif
 };
 
-//
-//	Quote Game Table sequences to scancodes.
-//
-static OHKey AOHKQuoteGameTable[OH_SPECIAL+1] = {
+///
+///	Game table quoted key to scancodes.
+///
+static OHKey AOHKQuoteGameTable[AOHK_KEY_SPECIAL + 1] = {
 #ifdef DEFAULT
+//	*INDENT-OFF*
 /* 0 */ { 0,		KEY_SPACE },	// SPACE
 /* 1 */ { 0,		KEY_V	},	// v
 /* 2 */ { 0,		KEY_B	},	// b
@@ -242,17 +270,18 @@ static OHKey AOHKQuoteGameTable[OH_SPECIAL+1] = {
 /* ? */ { 0,		KEY_F8	},	// F8
 
 /*NUM*/ { 0,		KEY_5	},	// 5
+//	*INDENT-ON*
 #endif
 };
 
-
-//
-//	Number Table sequences to scancodes.
-//		The first value are the flags and modifiers.
-//		The second value is the scancode to send.
-//
-static OHKey AOHKNumberTable[OH_SPECIAL+1] = {
+///
+///	Number table key to scancodes.
+///		The first value are the flags and modifiers.
+///		The second value is the scancode to send.
+///
+static OHKey AOHKNumberTable[AOHK_KEY_SPECIAL + 1] = {
 #ifdef DEFAULT
+//	*INDENT-OFF*
 /* * */ { 0,		KEY_KPENTER },	// ENTER
 /* 1 */ { 0,		KEY_KP1	},	// 1
 /* 2 */ { 0,		KEY_KP2	},	// 2
@@ -280,38 +309,59 @@ static OHKey AOHKNumberTable[OH_SPECIAL+1] = {
 /* ? */ { 0,		KEY_BACKSPACE },// BSP
 
 /*NUM*/ { RESET,	KEY_RESERVED },	// Return to normal mode
+//	*INDENT-ON*
 #endif
 };
 
-//
-//	*INDENT-ON*
+///
+///	Macro table sequences to scancodes.
+///
+static OHKey AOHKMacroTable[11 * 10 + 1 + 8];
 
-//
-//	Macro Table sequences to scancodes.
-//
-static unsigned char *AOHKMacroTable[10 * 10 + 1 + 8];
+///
+///	Macro table quoted sequences to scancodes.
+///
+static OHKey AOHKMacroQuoteTable[11 * 10 + 1 + 8];
 
-//
-//	Macro Table quoted sequences to scancodes.
-//
-static unsigned char *AOHKMacroQuoteTable[10 * 10 + 1 + 8];
+///
+///	Macro storage table.
+///
+///	Any of the above tables can contain macros, there are only index into
+///	this table stored.
+///
+///	currently max. 256 different macros are supported.
+///
+///	It is possible to extend too 64*256 macros, using the low bits of
+///	MACRO modifier.
+///
+static OHKey *AOHKMacros[256];
 
-extern int DebugLevel;
+//----------------------------------------------------------------------------
+//	Debug
+//----------------------------------------------------------------------------
 
-//
-//	Debug output function.
-//
+extern int DebugLevel;			///< in: debug level
+
+///
+///	Debug output function.
+///
+///	0 errors, 1 warnings, 2 info, 3 .., more verbose debug.
+///
 #define Debug(level, fmt...) \
-    do { if (level>DebugLevel) { printf(fmt); } } while (0)
+    do { if (level<DebugLevel) { printf(fmt); } } while (0)
 
 //----------------------------------------------------------------------------
 //	Send
 //----------------------------------------------------------------------------
 
-//
-//	Send modifier press.
-//	modifier ist a bitfield of modifier
-//
+///
+///	Send modifier press.
+///
+///	@param modifier is a bitfield of modifier
+///
+///	@see Q_SHFT_L Q_SHFT_R Q_CTRL_L Q_CTRL_R Q_ALT_L Q_ALT_R Q_GUI_L
+///		Q_GUI_R
+///
 static void AOHKSendPressModifier(int modifier)
 {
     if (modifier & Q_SHFT_L) {
@@ -340,9 +390,12 @@ static void AOHKSendPressModifier(int modifier)
     }
 }
 
-//
-//	Send an internal sequence as press events to old routines.
-//
+///
+///	Send an internal sequence as press events to input emulation.
+///
+///	@param modifier is a bitfield of modifier
+///	@param sequence output key definition
+///
 static void AOHKSendPressSequence(int modifier, const OHKey * sequence)
 {
     // First all modifieres
@@ -350,7 +403,7 @@ static void AOHKSendPressSequence(int modifier, const OHKey * sequence)
 	AOHKSendPressModifier(modifier);
     }
     // This are special qualifiers
-    if (sequence->Modifier) {
+    if (sequence->Modifier && sequence->Modifier ^ 0x80) {
 	if (sequence->Modifier & ALTGR && !(modifier & Q_ALT_R)) {
 	    KeyOut(KEY_RIGHTALT, 1);
 	}
@@ -364,14 +417,20 @@ static void AOHKSendPressSequence(int modifier, const OHKey * sequence)
 	    KeyOut(KEY_LEFTSHIFT, 1);
 	}
     }
+    // Now the scan code
     KeyOut(sequence->KeyCode, 1);
 
     AOHKRelease = 1;			// Set flag release send needed
 }
 
-//
-//	Send modifier release. (reverse press order)
-//
+///
+///	Send modifier release. (reverse press order)
+///
+///	@param modifier is a bitfield of modifier
+///
+///	@see Q_SHFT_L Q_SHFT_R Q_CTRL_L Q_CTRL_R Q_ALT_L Q_ALT_R Q_GUI_L
+///		Q_GUI_R
+///
 static void AOHKSendReleaseModifier(int modifier)
 {
     if (modifier & Q_GUI_R) {
@@ -400,15 +459,19 @@ static void AOHKSendReleaseModifier(int modifier)
     }
 }
 
-//
-//	Send an internal sequence as release events.
-//
+///
+///	Send an internal sequence as release events. (reverse order)
+///
+///	@param modifier is a bitfield of modifier
+///	@param sequence output key definition
+///
 static void AOHKSendReleaseSequence(int modifier, const OHKey * sequence)
 {
+    // First the scan code
     KeyOut(sequence->KeyCode, 0);
 
     // This are special qualifiers
-    if (sequence->Modifier) {
+    if (sequence->Modifier && sequence->Modifier ^ 0x80) {
 	if (sequence->Modifier & SHIFT && !(modifier & Q_SHFT_L)) {
 	    KeyOut(KEY_LEFTSHIFT, 0);
 	}
@@ -422,6 +485,7 @@ static void AOHKSendReleaseSequence(int modifier, const OHKey * sequence)
 	    KeyOut(KEY_RIGHTALT, 0);
 	}
     }
+    // Last all modifieres
     if (modifier) {
 	AOHKSendReleaseModifier(modifier);
     }
@@ -429,9 +493,11 @@ static void AOHKSendReleaseSequence(int modifier, const OHKey * sequence)
     AOHKRelease = 0;			// release is done
 }
 
-//
-//	Game mode release key.
-//
+///
+///	Game mode release key.
+///
+///	@param key	Internal key (AOHK_KEY_0, ...)
+///
 static void AOHKGameModeRelease(int key)
 {
     const OHKey *sequence;
@@ -452,14 +518,14 @@ static void AOHKGameModeRelease(int key)
     }
 }
 
-//
-//	Game mode release keys.
-//
+///
+///	Game mode release all keys.
+///
 static void AOHKGameModeReleaseAll(void)
 {
     int i;
 
-    for (i = 0; i <= OH_SPECIAL; ++i) {
+    for (i = 0; i <= AOHK_KEY_SPECIAL; ++i) {
 	AOHKGameModeRelease(i);
     }
 }
@@ -468,58 +534,59 @@ static void AOHKGameModeReleaseAll(void)
 //	Leds
 //----------------------------------------------------------------------------
 
-//
-//	Quote State led
-//
+///
+///	Quote State led
+///
 static void QuoteStateLedOn(void)
 {
     ShowLED(0, 1);
 }
 
-//
-//	Quote State led
-//
+///
+///	Quote State led
+///
 static void QuoteStateLedOff(void)
 {
     ShowLED(0, 0);
 }
 
-//
-//	Second State led
-//
+///
+///	Second State led
+///
 static void SecondStateLedOn(void)
 {
     ShowLED(1, 1);
 }
 
-//
-//	Second State led
-//
+///
+///	Second State led
+///
 static void SecondStateLedOff(void)
 {
     ShowLED(1, 0);
 }
 
-//
-//	Gamemode led
-//
+///
+///	Gamemode led
+///
 static void GameModeLedOn(void)
 {
     ShowLED(2, 1);
 }
 
-//
-//	Gamemode led
-//
+///
+///	Gamemode led
+///
 static void GameModeLedOff(void)
 {
     ShowLED(2, 0);
 }
 
 //----------------------------------------------------------------------------
-//
-//	Reset to normal state.
-//
+
+///
+///	Reset to normal state.
+///
 static void AOHKReset(void)
 {
     if (AOHKState == OHSoftOff) {	// Disabled do nothing
@@ -536,7 +603,7 @@ static void AOHKReset(void)
 	} else if (AOHKLastModifier) {
 	    AOHKSendReleaseModifier(AOHKLastModifier);
 	} else {
-	    Debug(5, "FIXME: release lost\n");
+	    Debug(0, "FIXME: release lost\n");
 	}
 	AOHKRelease = 0;
     }
@@ -545,6 +612,7 @@ static void AOHKReset(void)
     AOHKStickyModifier = 0;
     AOHKLastKey = 0;
     AOHKState = OHFirstKey;
+
     // FIXME: Check if leds are on!
     SecondStateLedOff();
     QuoteStateLedOff();
@@ -556,12 +624,14 @@ static void AOHKReset(void)
 //	Helper functions
 //----------------------------------------------------------------------------
 
-//
-//	Handle modifier key sequence.
-//
-//	First press sends press, second press sends release.
-//	Next key also releases the modifier.
-//
+///
+///	Handle modifier key sequence.
+///
+///	First press sends press, second press sends release.
+///	Next key also releases the modifier.
+///
+///	@param modifier is a bitfield of modifier
+///
 static void AOHKDoModifier(int modifier)
 {
     if (AOHKModifier & modifier) {	// release it
@@ -576,14 +646,15 @@ static void AOHKDoModifier(int modifier)
     AOHKRelease = AOHKModifier != 0;	// release required
 }
 
-static void AOHKEnterSpecialState(void);
-
-//
-//	Handle key sequence.
-//
+///
+///	Handle key sequence.
+///
+///	@param sequence output key definition
+///
+///	@see RESET QUAL STICKY TOGAME TONUM SPECIAL MACRO
+///
 static void AOHKDoSequence(const OHKey * sequence)
 {
-
     switch (sequence->Modifier) {
 	case RESET:
 	    Debug(2, "Soft reset\n");
@@ -596,14 +667,42 @@ static void AOHKDoSequence(const OHKey * sequence)
 	    // FIXME: sticky qualifier
 	    break;
 	case TOGAME:
+	    if (sequence->KeyCode != KEY_RESERVED) {
+		AOHKSendPressSequence(AOHKLastModifier =
+		    AOHKModifier, AOHKLastSequence = sequence);
+		AOHKModifier = AOHKStickyModifier;
+	    }
 	    AOHKEnterGameMode();
 	    break;
 	case TONUM:
+	    if (sequence->KeyCode != KEY_RESERVED) {
+		AOHKSendPressSequence(AOHKLastModifier =
+		    AOHKModifier, AOHKLastSequence = sequence);
+		AOHKModifier = AOHKStickyModifier;
+	    }
 	    AOHKEnterNumberMode();
 	    break;
 	case SPECIAL:
 	    AOHKEnterSpecialState();
 	    break;
+
+	case MACRO:
+	    Debug(0, "Macro %d\n", sequence->KeyCode);
+	    if (1) {
+		int i;
+		const OHKey *macro;
+
+		macro = AOHKMacros[sequence->KeyCode];
+		for (i = 0; macro[i].KeyCode != KEY_RESERVED; ++i) {
+		    AOHKSendPressSequence(AOHKModifier, macro + i);
+		    AOHKSendReleaseSequence(AOHKModifier, macro + i);
+		}
+	    }
+	    AOHKLastModifier = AOHKModifier;
+	    AOHKLastSequence = sequence;
+	    AOHKModifier = AOHKStickyModifier;
+	    break;
+
 	default:			// QUOTE or nothing
 	    AOHKSendPressSequence(AOHKLastModifier =
 		AOHKModifier, AOHKLastSequence = sequence);
@@ -616,13 +715,20 @@ static void AOHKDoSequence(const OHKey * sequence)
 //	Game Mode
 //----------------------------------------------------------------------------
 
-//
-//	Map to internal key.
-//	OH_...
-//	-1 if not mapable.
-//
-static int AOHKMapToInternal(int key, __attribute__ ((unused))
-    int down)
+///
+///	Map to internal key symbols.
+///
+///	Lookup @a key in #AOHKConvertTable and return its mapping.
+///	#AOHK_KEY_0, ... or -1 if not mapable.
+///
+///	@param key	input key scan code
+///	@param down	unused, key press or release
+///
+///	@returns	Internal symbol for scan code, -1 if not used.
+///
+///	@see __aohk_internal_keys__
+///
+static int AOHKMapToInternal(int key, int down __attribute__ ((unused)))
 {
     if (key < 0 || (unsigned)key >= sizeof(AOHKConvertTable)) {
 	return -1;
@@ -630,53 +736,53 @@ static int AOHKMapToInternal(int key, __attribute__ ((unused))
     return AOHKConvertTable[key] == 255 ? -1 : AOHKConvertTable[key];
 }
 
-//
-//	Enter game mode
-//
+///
+///	Enter game mode
+///
 static void AOHKEnterGameMode(void)
 {
-    Debug(4, "Game mode on.\n");
+    Debug(2, "Game mode on.\n");
     AOHKReset();			// release keys, ...
     AOHKState = OHGameMode;
     GameModeLedOn();
 }
 
-//
-//	Enter number mode
-//
+///
+///	Enter number mode
+///
 static void AOHKEnterNumberMode(void)
 {
-    Debug(4, "Number mode on.\n");
+    Debug(2, "Number mode on.\n");
     AOHKReset();			// release keys, ...
     AOHKState = OHNumberMode;
     NumberModeLedOn();
 }
 
-//
-//	Enter special state
-//
+///
+///	Enter special state
+///
 static void AOHKEnterSpecialState(void)
 {
-    Debug(4, "Special state start.\n");
+    Debug(1, "Special state start.\n");
     AOHKState = OHSpecial;
-    SpecialStateLedOff();
+    SpecialStateLedOn();
 }
 
 //----------------------------------------------------------------------------
 //	State machine
 //----------------------------------------------------------------------------
 
-//
-//	Send sequence from state machine
-//
+///
+///	Send sequence from state machine
+///
 static void AOHKSendSequence(int key, const OHKey * sequence)
 {
     //
     //	if quote or quote+repeat (=super) still be pressed
     //	reenter this state.
     //
-    if (key != OH_QUOTE && (AOHKDownKeys & (1 << OH_QUOTE))) {
-	if (AOHKDownKeys & (1 << OH_REPEAT)) {
+    if (key != AOHK_KEY_0 && (AOHKDownKeys & (1 << AOHK_KEY_0))) {
+	if (AOHKDownKeys & (1 << AOHK_KEY_HASH)) {
 	    AOHKState = OHSuperFirstKey;
 	} else {
 	    AOHKState = OHQuoteFirstKey;
@@ -691,15 +797,19 @@ static void AOHKSendSequence(int key, const OHKey * sequence)
     AOHKDoSequence(sequence);
 }
 
-//
-//	Handle the Firstkey state.
-//
+///
+///	Handle the Firstkey state.
+///
+///	@param key	Internal key pressed
+///
+///	@see OHFirstKey OHMacroFirstKey
+///
 static void AOHKFirstKey(int key)
 {
     switch (key) {
 
-	case OH_MACRO:			// macro key
-	    if (AOHKDownKeys & (1 << OH_REPEAT)) {	// game mode
+	case AOHK_KEY_STAR:		// macro key
+	    if (AOHKDownKeys & (1 << AOHK_KEY_HASH)) {	// game mode
 		// This directions didn't work good, better MACRO+REPEAT
 		AOHKEnterGameMode();
 		break;
@@ -712,15 +822,15 @@ static void AOHKFirstKey(int key)
 	    }
 	    break;
 
-	case OH_QUOTE:			// enter quote state
-	    if (AOHKDownKeys & (1 << OH_REPEAT)) {	// super quote
-		Debug(2, "super quote.\n");
+	case AOHK_KEY_0:		// enter quote state
+	    if (AOHKDownKeys & (1 << AOHK_KEY_HASH)) {	// super quote
+		Debug(1, "super quote.\n");
 		AOHKState = OHSuperFirstKey;
 		QuoteStateLedOn();
 		break;
 	    }
 	    if (AOHKState == OHMacroFirstKey) {
-		Debug(5, "FIXME: Macro quote\n");
+		Debug(1, "macro quote\n");
 		AOHKState = OHMacroQuoteFirstKey;
 	    } else {
 		AOHKState = OHQuoteFirstKey;
@@ -728,48 +838,54 @@ static void AOHKFirstKey(int key)
 	    QuoteStateLedOn();
 	    break;
 
-	case OH_SPECIAL:		// enter special state
+	case AOHK_KEY_SPECIAL:		// enter special state
 	    AOHKEnterSpecialState();
 	    break;
 
-	case OH_REPEAT:		// repeat last sequence
+	case AOHK_KEY_HASH:		// repeat last sequence
 	    // MACRO -> REPEAT
 	    if (AOHKState == OHMacroFirstKey) {
 		AOHKEnterGameMode();
 		break;
 	    }
-	    if (AOHKDownKeys & (1 << OH_MACRO)) {	// game mode
+	    if (AOHKDownKeys & (1 << AOHK_KEY_STAR)) {	// game mode
 		AOHKEnterGameMode();
 		break;
 	    }
-	    if (AOHKLastSequence) {
+	    if (AOHKLastSequence) {	// repeat full sequence
 		AOHKSendPressSequence(AOHKLastModifier, AOHKLastSequence);
-	    } else if (AOHKLastModifier) {
+	    } else if (AOHKLastModifier) {	// or only modifier
 		AOHKDoModifier(AOHKLastModifier);
 	    }
 	    return;
 
-	case OH_USR_1:
-	case OH_USR_2:
-	case OH_USR_3:
-	case OH_USR_4:
-	case OH_USR_5:
-	case OH_USR_6:
-	case OH_USR_7:
-	case OH_USR_8:
-	    AOHKSendSequence(key, &AOHKTable[10 * 10 + 1 + key - OH_USR_1]);
+	case AOHK_KEY_USR_1:
+	case AOHK_KEY_USR_2:
+	case AOHK_KEY_USR_3:
+	case AOHK_KEY_USR_4:
+	case AOHK_KEY_USR_5:
+	case AOHK_KEY_USR_6:
+	case AOHK_KEY_USR_7:
+	case AOHK_KEY_USR_8:
+	    AOHKSendSequence(key,
+		&AOHKTable[USR_START + key - AOHK_KEY_USR_1]);
 	    return;
 
 	default:
-	    if (AOHKDownKeys & (1 << OH_REPEAT)) {	// cursor mode?
-		Debug(2, "cursor mode.\n");
-		AOHKSendSequence(key, &AOHKTable[9 * 10 + key - OH_QUOTE]);
+	    // repeat key still pressed and any number key
+	    if (AOHKDownKeys & (1 << AOHK_KEY_HASH)) {	// cursor mode?
+		Debug(1, "cursor mode.\n");
+		AOHKSendSequence(key,
+		    &AOHKTable[HASH_START + key - AOHK_KEY_0]);
 		return;
 	    }
 	    AOHKLastKey = key;
 	    if (AOHKState == OHMacroFirstKey) {
 		AOHKState = OHMacroSecondKey;
 	    } else {
+		if (AOHKState != OHFirstKey) {
+		    Debug(0, "internal error.\n");
+		}
 		AOHKState = OHSecondKey;
 	    }
 	    SecondStateLedOn();
@@ -778,63 +894,92 @@ static void AOHKFirstKey(int key)
     Timeout = AOHKTimeout;
 }
 
-//
-//	Handle the Super/Quote Firstkey state.
-//
+///
+///	Handle the Super/Quote Firstkey state.
+///
+///	@param key	Internal key pressed
+///
+///	@see OHQuoteFirstKey OHSuperFirstKey OHQuoteMacroFirstKey
+///
 static void AOHKQuoteFirstKey(int key)
 {
     switch (key) {
-	case OH_MACRO:			// macro key
-	    // QUOTE->MACRO free
-	    // FIXNE:
-	    AOHKState = OHMacroFirstKey;
-	    return;
-
-	case OH_QUOTE:			// double quote extra key
-	    if (AOHKState == OHSuperFirstKey) {	// super quote quote
-		AOHKSendSequence(key, &AOHKSuperTable[10 * 10]);
-	    } else if (AOHKState == OHMacroFirstKey) {	// macro quote quote
-		AOHKSendSequence(key, (const OHKey *)AOHKMacroTable[10 * 10]);
+	case AOHK_KEY_STAR:		// macro key
+	    if (AOHKDownKeys & (1 << AOHK_KEY_0)) {
+		// macro quote
+		Debug(2, "quote macro\n");
+		AOHKState = OHMacroQuoteFirstKey;
+		break;
+	    }
+	    if (AOHKState == OHSuperFirstKey) {
+		// super quote macro
+		AOHKSendSequence(key, &AOHKSuperTable[STAR_START]);
+	    } else if (AOHKState == OHMacroQuoteFirstKey) {
+		// macro quote macro
+		AOHKSendSequence(key, &AOHKMacroTable[STAR_START]);
 	    } else {
-		AOHKSendSequence(key, &AOHKTable[10 * 10]);
+		// quote macro
+		AOHKSendSequence(key, &AOHKTable[STAR_START]);
 	    }
 	    break;
 
-	case OH_SPECIAL:		// enter special state
+	case AOHK_KEY_0:		// double quote extra key
+	    if (AOHKState == OHSuperFirstKey) {
+		// super quote quote
+		AOHKSendSequence(key, &AOHKSuperTable[DOUBLE_QUOTE]);
+	    } else if (AOHKState == OHMacroQuoteFirstKey) {
+		// macro quote quote
+		AOHKSendSequence(key, &AOHKMacroTable[DOUBLE_QUOTE]);
+	    } else {
+		// quote quote
+		AOHKSendSequence(key, &AOHKTable[DOUBLE_QUOTE]);
+	    }
+	    break;
+
+	case AOHK_KEY_SPECIAL:		// enter special state
 	    AOHKEnterSpecialState();
 	    return;
 
-	case OH_REPEAT:		// quoted repeat extra key
-	    if (AOHKDownKeys & (1 << OH_QUOTE)) {	// super quote
+	case AOHK_KEY_HASH:		// quoted repeat extra key
+	    if (AOHKDownKeys & (1 << AOHK_KEY_0)) {	// super quote
 		// Use this works good
 		Debug(2, "super quote.\n");
 		AOHKState = OHSuperFirstKey;
 		QuoteStateLedOn();
 		break;
 	    }
-	    if (AOHKState == OHSuperFirstKey) {	// super quote repeat
-		AOHKSendSequence(key, &AOHKSuperTable[9 * 10]);
-	    } else if (AOHKState == OHMacroFirstKey) {	// macro quote repeat
-		AOHKSendSequence(key, (const OHKey *)AOHKMacroTable[9 * 10]);
+	    if (AOHKState == OHSuperFirstKey) {
+		// super quote repeat
+		AOHKSendSequence(key, &AOHKSuperTable[HASH_START]);
+	    } else if (AOHKState == OHMacroQuoteFirstKey) {
+		// macro quote repeat
+		AOHKSendSequence(key, &AOHKMacroTable[HASH_START]);
 	    } else {
-		AOHKSendSequence(key, &AOHKTable[9 * 10]);
+		// quote repeat
+		AOHKSendSequence(key, &AOHKTable[HASH_START]);
 	    }
 	    break;
 
-	case OH_USR_1:
-	case OH_USR_2:
-	case OH_USR_3:
-	case OH_USR_4:
-	case OH_USR_5:
-	case OH_USR_6:
-	case OH_USR_7:
-	case OH_USR_8:
-	    if (AOHKState == OHSuperFirstKey) {	// super quote quote
+	case AOHK_KEY_USR_1:
+	case AOHK_KEY_USR_2:
+	case AOHK_KEY_USR_3:
+	case AOHK_KEY_USR_4:
+	case AOHK_KEY_USR_5:
+	case AOHK_KEY_USR_6:
+	case AOHK_KEY_USR_7:
+	case AOHK_KEY_USR_8:
+	    if (AOHKState == OHSuperFirstKey) {
+		// super quote
 		AOHKSendSequence(key,
-		    &AOHKSuperTable[10 * 10 + 1 + key - OH_USR_1]);
+		    &AOHKSuperTable[USR_START + key - AOHK_KEY_USR_1]);
+	    } else if (AOHKState == OHMacroQuoteFirstKey) {
+		// macro quote
+		AOHKSendSequence(key,
+		    &AOHKMacroQuoteTable[USR_START + key - AOHK_KEY_USR_1]);
 	    } else {
+		// quote
 		AOHKSendSequence(key,
-		    &AOHKQuoteTable[10 * 10 + 1 + key - OH_USR_1]);
+		    &AOHKQuoteTable[USR_START + key - AOHK_KEY_USR_1]);
 	    }
 	    break;
 
@@ -846,9 +991,11 @@ static void AOHKQuoteFirstKey(int key)
     }
 }
 
-//
-//	Handle the Normal/Super/Quote SecondKey state.
-//
+///
+///	Handle the Normal/Super/Quote SecondKey state.
+///
+///	@param key	Internal key pressed
+///
 void AOHKSecondKey(int key)
 {
     const OHKey *sequence;
@@ -857,16 +1004,18 @@ void AOHKSecondKey(int key)
     //
     //	Every not supported key, does a soft reset.
     //
-    if (key == OH_MACRO || key == OH_SPECIAL || (OH_USR_1 <= key && key <= OH_USR_8)) {	// oops
+    if (key == AOHK_KEY_SPECIAL || (AOHK_KEY_USR_1 <= key && key <= AOHK_KEY_USR_8)) {	// oops
 	AOHKReset();
 	return;
     }
-    // OH_QUOTE ok
+    // AOHK_KEY_0 ok
 
-    if (key == OH_REPEAT) {		// second repeat 9 extra keys
-	n = 9 * 10 + AOHKLastKey - OH_QUOTE;
+    if (key == AOHK_KEY_HASH) {		// second repeat 9 extra keys
+	n = HASH_START + AOHKLastKey - AOHK_KEY_0;
+    } else if (key == AOHK_KEY_STAR) {	// second macro 9 extra keys
+	n = STAR_START + AOHKLastKey - AOHK_KEY_0;
     } else {				// normal key sequence
-	n = (AOHKLastKey - OH_KEY_1) * 10 + key - OH_QUOTE;
+	n = (AOHKLastKey - AOHK_KEY_1) * 10 + key - AOHK_KEY_0;
     }
 
     switch (AOHKState) {
@@ -877,12 +1026,10 @@ void AOHKSecondKey(int key)
 	    sequence = &AOHKQuoteTable[n];
 	    break;
 	case OHMacroSecondKey:
-	    // FIXME: string
-	    sequence = (const OHKey *)AOHKMacroTable[n];
+	    sequence = &AOHKMacroTable[n];
 	    break;
 	case OHMacroQuoteSecondKey:
-	    // FIXME: string
-	    sequence = (const OHKey *)AOHKMacroQuoteTable[n];
+	    sequence = &AOHKMacroQuoteTable[n];
 	    break;
 	case OHSuperSecondKey:
 	default:
@@ -893,6 +1040,7 @@ void AOHKSecondKey(int key)
     // This allows pressing first key and quote together.
     if (sequence->Modifier == QUOTE) {
 	Debug(2, "Quote as second key\n");
+	// FIXME: macro ..
 	AOHKState = OHQuoteSecondKey;
 	QuoteStateLedOn();
 	return;
@@ -900,17 +1048,16 @@ void AOHKSecondKey(int key)
     AOHKSendSequence(key, sequence);
 }
 
-//
-//	Handle the game mode state.
-//
-//	Game mode:	For games keys are direct mapped.
-//
-//
-void AOHKGameMode(int key)
+///
+///	Handle the game mode state.
+///
+///	Game mode:	For games keys are direct mapped.
+///
+static void AOHKGameMode(int key)
 {
     const OHKey *sequence;
 
-    Debug(1, "Gamemode key %d.\n", key);
+    Debug(4, "Gamemode key %d.\n", key);
 
     // FIXME: QUAL shouldn't work correct
 
@@ -921,7 +1068,7 @@ void AOHKGameMode(int key)
     //	Reset is used to return to normal mode.
     //
     if (sequence->Modifier == RESET) {
-	Debug(4, "Game mode off.\n");
+	Debug(3, "Game mode off.\n");
 	AOHKGameModeReleaseAll();
 	AOHKState = OHFirstKey;
 	GameModeLedOff();
@@ -931,7 +1078,7 @@ void AOHKGameMode(int key)
     //	Holding down QUOTE shifts to second table.
     //
     if (sequence->Modifier == QUOTE) {
-	Debug(2, "Game mode quote.\n");
+	Debug(3, "Game mode quote.\n");
 	AOHKLastKey = 1;
 	AOHKGameSendQuote = 1;
 	AOHKLastModifier = AOHKModifier;
@@ -948,14 +1095,16 @@ void AOHKGameMode(int key)
     }
 }
 
-//
-//	Handle the number mode state.
-//
-void AOHKNumberMode(int key)
+///
+///	Handle the number mode state.
+///
+///	Number mode:	For number inputs, key are direct mapped.
+///
+static void AOHKNumberMode(int key)
 {
     const OHKey *sequence;
 
-    Debug(1, "Numbermode key %d.\n", key);
+    Debug(3, "Numbermode key %d.\n", key);
 
     sequence = &AOHKNumberTable[key];
 
@@ -963,9 +1112,9 @@ void AOHKNumberMode(int key)
     //	Reset is used to return to normal mode.
     //
     if (sequence->Modifier == RESET) {
-	Debug(4, "Number mode off.\n");
+	Debug(2, "Number mode off.\n");
 	// Release all still pressed keys.
-	for (key = 0; key <= OH_SPECIAL; ++key) {
+	for (key = 0; key <= AOHK_KEY_SPECIAL; ++key) {
 	    if (AOHKGamePressed & (1 << key)) {
 		sequence = &AOHKNumberTable[key];
 		AOHKSendReleaseSequence(0, sequence);
@@ -981,97 +1130,90 @@ void AOHKNumberMode(int key)
     AOHKGamePressed |= (1 << key);
 }
 
-//
-//	Handle the special state.
-//
+///
+///	Handle the special state.
+///
+///	Command mode.
+///
 static void AOHKSpecialMode(int key)
 {
     SpecialStateLedOff();
     AOHKReset();
 
-    Debug(2, "Special Key %d.\n", key);
+    Debug(3, "Special Key %d.\n", key);
     switch (key) {
-	case OH_QUOTE:
-	    // FIXME: nolonger used
-	    // FIXME: swap QUOTE AND REPEAT keys.
-	    return;
-	case OH_KEY_4:			// Version
-	    // FIXME: Ugly hack
-	    KeyOut(KEY_A, 1);
-	    KeyOut(KEY_A, 0);
-	    KeyOut(KEY_O, 1);
-	    KeyOut(KEY_O, 0);
-	    KeyOut(KEY_H, 1);
-	    KeyOut(KEY_H, 0);
-	    KeyOut(KEY_K, 1);
-	    KeyOut(KEY_K, 0);
-	    KeyOut(KEY_SPACE, 1);
-	    KeyOut(KEY_SPACE, 0);
-	    KeyOut(KEY_V, 1);
-	    KeyOut(KEY_V, 0);
-	    KeyOut(KEY_0, 1);
-	    KeyOut(KEY_0, 0);
-	    KeyOut(KEY_DOT, 1);
-	    KeyOut(KEY_DOT, 0);
-	    KeyOut(KEY_0, 1);
-	    KeyOut(KEY_0, 0);
-	    KeyOut(KEY_5, 1);
-	    KeyOut(KEY_5, 0);
+	case AOHK_KEY_0:		// reset to known state
+	    Debug(2, "Reset\n");
 	    return;
 
-	case OH_KEY_5:			// exit
+	case AOHK_KEY_1:		// enable only me mode
+	    AOHKOnlyMe ^= 1;
+	    Debug(2, "Toggle only me mode %s.\n", AOHKOnlyMe ? "on" : "off");
+	    return;
+
+	case AOHK_KEY_2:		// double timeout
+	    AOHKTimeout <<= 1;
+	    AOHKTimeout |= 1;
+	    Timeout = AOHKTimeout;
+	    Debug(2, "Double timeout %d.\n", AOHKTimeout);
+	    return;
+
+	case AOHK_KEY_3:		// half timeout
+	    AOHKTimeout >>= 1;
+	    AOHKTimeout |= 1;
+	    Timeout = AOHKTimeout;
+	    Debug(2, "Half timeout %d.\n", AOHKTimeout);
+	    return;
+
+	case AOHK_KEY_4:		// Version
+	    if (1) {
+		int i;
+		char version[] = {
+		    KEY_A, KEY_O, KEY_H, KEY_K, KEY_SPACE,
+		    KEY_V, KEY_0, KEY_DOT, KEY_0, KEY_6, KEY_RESERVED
+		};
+		for (i = 0; version[i]; ++i) {
+		    KeyOut(version[i], 1);
+		    KeyOut(version[i], 0);
+		}
+	    }
+	    return;
+
+	case AOHK_KEY_5:		// exit
 	    AOHKReset();
 	    Exit = 1;
 	    return;
-	case OH_SPECIAL:		// turn it off
+
+	case AOHK_KEY_6:		// game mode
+	    Debug(2, "Game mode on.\n");
+	    AOHKEnterGameMode();
+	    return;
+
+	case AOHK_KEY_7:		// number mode
+	    Debug(2, "Number mode on.\n");
+	    AOHKEnterNumberMode();
+	    return;
+
+	case AOHK_KEY_9:		// turn it off
+	    AOHKState = OHHardOff;
+	    Debug(2, "Turned off.\n");
+	    return;
+
+	case AOHK_KEY_SPECIAL:		// turn it off
 	    AOHKState = OHSoftOff;
-	    Debug(4, "Soft turned off.\n");
+	    Debug(2, "Soft turned off.\n");
 	    return;
     }
-    if (key == OH_KEY_1) {		// enable only me mode
-	AOHKOnlyMe ^= 1;
-	Debug(4, "Toggle only me mode %s.\n", AOHKOnlyMe ? "on" : "off");
-	return;
-    }
-    if (key == OH_KEY_2) {		// double timeout
-	AOHKTimeout <<= 1;
-	AOHKTimeout |= 1;
-	Timeout = AOHKTimeout;
-	Debug(4, "Double timeout %d.\n", AOHKTimeout);
-	return;
-    }
-    if (key == OH_KEY_3) {		// half timeout
-	AOHKTimeout >>= 1;
-	AOHKTimeout |= 1;
-	Timeout = AOHKTimeout;
-	Debug(4, "Half timeout %d.\n", AOHKTimeout);
-	return;
-    }
-    if (key == OH_KEY_5) {		// rotated mode
-	// FIXME: nolonger used
-	return;
-    }
-    if (key == OH_KEY_6) {		// game mode
-	Debug(4, "Game mode on.\n");
-	AOHKEnterGameMode();
-	return;
-    }
-    if (key == OH_KEY_7) {		// number mode
-	Debug(4, "Number mode on.\n");
-	AOHKEnterNumberMode();
-	return;
-    }
-    if (key == OH_KEY_9) {		// turn it off
-	AOHKState = OHHardOff;
-	Debug(4, "one-hand: Turned off.\n");
-	return;
-    }
-    Debug(5, "one-hand: unsupported special %d.\n", key);
+    Debug(1, "unsupported special %d.\n", key);
 }
 
-//
-//	OneHand Statemachine.
-//
+///
+///	OneHand Statemachine.
+///
+///	@param timestamp	ms timestamp of event
+///	@param inkey		input keycode @see /usr/include/linux/input.h
+///	@param down		True key is pressed, false key is released
+///
 void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 {
     int key;
@@ -1084,10 +1226,9 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	return;
     }
 
-    Debug(2, "Keyin 0x%02X=%d %s\n", inkey, inkey, down ? "down" : "up");
+    Debug(6, "Keyin 0x%02X=%d %s\n", inkey, inkey, down ? "down" : "up");
     key = AOHKMapToInternal(inkey, down);
 
-    //
     //
     //	Turned soft off
     //
@@ -1096,8 +1237,8 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	//  Next special key reenables us
 	//  down! otherwise we get the release of the disable press
 	//
-	if (down && key == OH_SPECIAL) {
-	    Debug(4, "Reenable.\n");
+	if (down && key == AOHK_KEY_SPECIAL) {
+	    Debug(1, "Reenable.\n");
 	    AOHKState = OHFirstKey;
 	    AOHKDownKeys = 0;
 	    return;
@@ -1109,7 +1250,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
     //	Timeout with timestamps
     //
     if (AOHKLastJiffies + AOHKTimeout < timestamp) {
-	Debug(1, "Timeout %lu %lu\n", AOHKLastJiffies, timestamp);
+	Debug(5, "Timeout %lu %lu\n", AOHKLastJiffies, timestamp);
 	AOHKFeedTimeout(timestamp - AOHKLastJiffies);
     }
     AOHKLastJiffies = timestamp;
@@ -1117,14 +1258,14 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
     //
     //	Disabled keys.
     //
-    if (key == OH_NOP) {
-	return;
+    if (key == AOHK_KEY_NOP) {
+	return;				// ignore them, no operation
     }
     //
     //	Handling of unsupported input keys.
     //
     if (key == -1) {
-	Debug(1, "Unsupported key %d=%#02x of state %d.\n", inkey, inkey,
+	Debug(5, "Unsupported key %d=%#02x of state %d.\n", inkey, inkey,
 	    AOHKState);
 
 	if (AOHKState != OHGameMode && AOHKState != OHNumberMode) {
@@ -1136,7 +1277,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	return;
     }
 
-    Debug(1, "Key %#02x -> %d of state %d.\n", inkey, key, AOHKState);
+    Debug(5, "Key %#02x -> %d of state %d.\n", inkey, key, AOHKState);
 
     //
     //	Test for repeat and handle release
@@ -1164,7 +1305,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 		AOHKSendReleaseSequence(0, &AOHKNumberTable[key]);
 	    } else {
 		// Happens on release of start sequence.
-		Debug(5, "oops key %d was not pressed\n", key);
+		Debug(3, "oops key %d was not pressed\n", key);
 	    }
 	} else {
 	    //
@@ -1175,7 +1316,7 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 		if (AOHKLastSequence) {
 		    AOHKSendReleaseSequence(AOHKLastModifier,
 			AOHKLastSequence);
-		} else if (OH_USR_1 <= key && key <= OH_USR_8) {
+		} else if (AOHK_KEY_USR_1 <= key && key <= AOHK_KEY_USR_8) {
 		    // FIXME: hold USR than press a sequence,
 		    // FIXME: than release USR is not supported!
 		    if (AOHKLastModifier) {
@@ -1184,11 +1325,11 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 			AOHKRelease = 0;
 		    }
 		} else {
-		    Debug(1, "Release for modifier!\n");
+		    Debug(3, "Release ignored for only modifier!\n");
 		    goto ignore;
 		}
 		if (AOHKRelease) {
-		    Debug(5, "Release not done!\n");
+		    Debug(0, "Release not done!\n");
 		}
 	    }
 	}
@@ -1248,14 +1389,18 @@ void AOHKFeedKey(unsigned long timestamp, int inkey, int down)
 	    break;
 
 	default:
-	    Debug(5, "Unkown state %d reached\n", AOHKState);
+	    Debug(0, "Unkown state %d reached\n", AOHKState);
 	    break;
     }
 }
 
-//
-//	Feed Timeouts
-//
+///
+///	Feed Timeouts.
+///
+///	Can be called seperate to update, LEDS.
+///
+///	@param which	Timeout happened,
+///
 void AOHKFeedTimeout(int which)
 {
     //
@@ -1265,14 +1410,14 @@ void AOHKFeedTimeout(int which)
 	&& AOHKState != OHSoftOff && AOHKState != OHHardOff) {
 	// Long time: total reset
 	if (which >= AOHKTimeout * 10) {
-	    Debug(1, "Timeout long %d\n", which);
+	    Debug(3, "Timeout long %d\n", which);
 	    AOHKReset();
 	    AOHKDownKeys = 0;
 	    Timeout = 0;
 	    return;
 	}
 	if (AOHKState != OHFirstKey) {
-	    Debug(1, "Timeout short %d\n", which);
+	    Debug(3, "Timeout short %d\n", which);
 	    // FIXME: Check if leds are on!
 	    SecondStateLedOff();
 	    QuoteStateLedOff();
@@ -1284,9 +1429,9 @@ void AOHKFeedTimeout(int which)
     }
 }
 
-//
-//	Reset convert table
-//
+///
+///	Reset convert table
+///
 void AOHKResetConvertTable(void)
 {
     size_t idx;
@@ -1296,9 +1441,11 @@ void AOHKResetConvertTable(void)
     }
 }
 
-//
-//	Reset mapping table
-//
+///
+///	Reset mapping tables
+///
+///	@see AOHKTable AOHKQuoteTable AOHKSuperTable
+///
 void AOHKResetMappingTable(void)
 {
     size_t idx;
@@ -1327,41 +1474,47 @@ void AOHKResetMappingTable(void)
 	AOHKQuoteGameTable[idx].Modifier = RESET;
 	AOHKQuoteGameTable[idx].KeyCode = KEY_RESERVED;
     }
+    for (idx = 0; idx < sizeof(AOHKNumberTable) / sizeof(*AOHKNumberTable);
+	++idx) {
+	AOHKNumberTable[idx].Modifier = RESET;
+	AOHKNumberTable[idx].KeyCode = KEY_RESERVED;
+    }
 }
 
-//
-//	Reset macro table
-//
+///
+///	Reset macro tables
+///
 void AOHKResetMacroTable(void)
 {
     size_t idx;
 
     for (idx = 0; idx < sizeof(AOHKMacroTable) / sizeof(*AOHKMacroTable);
 	++idx) {
-
-	if (AOHKMacroTable[idx]) {
-	    free(AOHKMacroTable[idx]);
-	}
-	AOHKMacroTable[idx] = NULL;
+	AOHKMacroTable[idx].Modifier = RESET;
+	AOHKMacroTable[idx].KeyCode = KEY_RESERVED;
     }
 
     for (idx = 0;
 	idx < sizeof(AOHKMacroQuoteTable) / sizeof(*AOHKMacroQuoteTable);
 	++idx) {
 
-	if (AOHKMacroQuoteTable[idx]) {
-	    free(AOHKMacroQuoteTable[idx]);
-	}
-	AOHKMacroQuoteTable[idx] = NULL;
+	AOHKMacroQuoteTable[idx].Modifier = RESET;
+	AOHKMacroQuoteTable[idx].KeyCode = KEY_RESERVED;
     }
 }
 
-//
-//	Setup table which converts input keycodes to internal key symbols.
-//
+///
+///	Setup table which converts input keycodes to internal key symbols.
+///
+///	Clears all previous entries of #AOHKConvertTable.
+///
+///	@param table	Table with pairs input internal keys.
+///
 void AOHKSetupConvertTable(const int *table)
 {
     int idx;
+
+    Debug(3, "Setup table %p\n", table);
 
     AOHKResetConvertTable();
 
@@ -1374,14 +1527,47 @@ void AOHKSetupConvertTable(const int *table)
 }
 
 //----------------------------------------------------------------------------
+//	Macro
+//----------------------------------------------------------------------------
+
+///
+///	Add macro
+///
+///	@param macro	String of output sequences.
+///
+static void AddMacro(OHKey * macro)
+{
+    int i;
+    unsigned u;
+
+    //	Length of macro
+    for (i = 0; i < 255; ++i) {
+	if (macro->KeyCode == KEY_RESERVED) {
+	    break;
+	}
+    }
+    //
+    //	Find free macro slot
+    //
+    for (u = 0; u < sizeof(AOHKMacros) / sizeof(*AOHKMacros); ++u) {
+	if (!AOHKMacros[u]) {
+	    AOHKMacros[u] = malloc(i * sizeof(OHKey));
+	    memcpy(AOHKMacros[u], macro, i * sizeof(OHKey));
+	    return;
+	}
+    }
+    Debug(0, "No space for more macros\n");
+}
+
+//----------------------------------------------------------------------------
 //	Save + Load
 //----------------------------------------------------------------------------
 
 //	*INDENT-OFF*
 
-//
-//	Key Scancode - string (US Layout used)
-//
+///
+///	Key Scancode - string (US Layout used)
+///
 static const char* AOHKKey2String[128] = {
     "RESERVED",
     "ESC",
@@ -1510,7 +1696,7 @@ static const char* AOHKKey2String[128] = {
     "KP_Equal",
     "KP_PlusMinus",
     "Pause",
-    "0x78",
+    "Scale",
     "KP_Comma",
     "Hanguel",
     "Hanja",
@@ -1520,9 +1706,9 @@ static const char* AOHKKey2String[128] = {
     "Menu",
 };
 
-//
-//	Alias names.
-//
+///
+///	Alias names.
+///
 static const struct {
     const char* Name;
     unsigned char Key;
@@ -1540,9 +1726,9 @@ static const struct {
     {"KP9",	KEY_KP9 },
 };
 
-//
-//	Internal key - string
-//
+///
+///	Internal key - string
+///
 static const char* AOHKInternal2String[] = {
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "#", "*",
     "USR1", "USR2", "USR3", "USR4", "USR5", "USR6", "USR7", "USR8",
@@ -1551,9 +1737,12 @@ static const char* AOHKInternal2String[] = {
 
 //	*INDENT-ON*
 
-//
-//	Save convert table.
-//
+///
+///	Save convert table.
+///
+///	@param fp	output file stream
+///	@param t	input to intern convert table
+///
 static void AOHKSaveConvertTable(FILE * fp, const unsigned char *t)
 {
     size_t i;
@@ -1568,26 +1757,35 @@ static void AOHKSaveConvertTable(FILE * fp, const unsigned char *t)
     }
 }
 
-//
-//	Save sequence
-//
+///
+///	Save sequence.
+///
+///	@param fp	output file stream
+///	@param s	output key sequence
+///
 static void AOHKSaveSequence(FILE * fp, const unsigned char *s)
 {
     switch (*s) {			// modifier code
 	case RESET:
-	    fprintf(fp, "RESET\n");
+	    fprintf(fp, "RESET");
 	    break;
 	case QUOTE:
-	    fprintf(fp, "QUOTE\n");
+	    fprintf(fp, "QUOTE");
 	    break;
 	case TOGAME:
-	    fprintf(fp, "GAME\n");
+	    fprintf(fp, "TOGAME");
+	    if (s[1] != KEY_RESERVED) {
+		fprintf(fp, " %s", AOHKKey2String[s[1]]);
+	    }
 	    break;
 	case TONUM:
-	    fprintf(fp, "NUM\n");
+	    fprintf(fp, "TONUM");
+	    if (s[1] != KEY_RESERVED) {
+		fprintf(fp, " %s", AOHKKey2String[s[1]]);
+	    }
 	    break;
 	case SPECIAL:
-	    fprintf(fp, "SPECIAL\n");
+	    fprintf(fp, "SPECIAL");
 	    break;
 	case QUAL:
 	case STICKY:
@@ -1620,7 +1818,20 @@ static void AOHKSaveSequence(FILE * fp, const unsigned char *s)
 	    if (s[1] & Q_GUI_R) {
 		fprintf(fp, "RightMeta ");
 	    }
-	    fprintf(fp, "\n");
+	    break;
+	case MACRO:
+	    if (1) {
+		int i;
+		const OHKey *macro;
+
+		macro = AOHKMacros[s[1]];
+		for (i = 0; macro[i].KeyCode != KEY_RESERVED; ++i) {
+		    if (i) {
+			fprintf(fp, " ");
+		    }
+		    AOHKSaveSequence(fp, (unsigned char *)&macro[i]);
+		}
+	    }
 	    break;
 	default:
 	    if (s[0] & SHIFT) {
@@ -1635,13 +1846,14 @@ static void AOHKSaveSequence(FILE * fp, const unsigned char *s)
 	    if (s[0] & ALTGR) {
 		fprintf(fp, "AltGr ");
 	    }
-	    fprintf(fp, "%s\n", AOHKKey2String[s[1]]);
+	    fprintf(fp, "%s", AOHKKey2String[s[1]]);
+	    break;
     }
 }
 
-//
-//	Save sequence table.
-//
+///
+///	Save sequence table.
+///
 static void AOHKSaveMapping(FILE * fp, const char *prefix,
     const unsigned char *t, int n)
 {
@@ -1652,11 +1864,13 @@ static void AOHKSaveMapping(FILE * fp, const char *prefix,
 	//	Print internal sequence code
 	//
 	fprintf(fp, "%s", prefix);
-	if (i == 100 * 2) {
+	if (i == DOUBLE_QUOTE * 2) {
 	    fprintf(fp, "00\t-> ");
-	} else if (i > 100 * 2) {
-	    fprintf(fp, "USR%d\t-> ", (i >> 1) - 100);
-	} else if (i > 89 * 2) {
+	} else if (i >= USR_START * 2) {
+	    fprintf(fp, "USR%d\t-> ", (i >> 1) - USR_START + 1);
+	} else if (i >= STAR_START * 2) {
+	    fprintf(fp, "%d*\t-> ", (i >> 1) % 10);
+	} else if (i >= HASH_START * 2) {
 	    fprintf(fp, "%d#\t-> ", (i >> 1) % 10);
 	} else {
 	    fprintf(fp, "%d%d\t-> ", (i >> 1) / 10 + 1, (i >> 1) % 10);
@@ -1666,12 +1880,13 @@ static void AOHKSaveMapping(FILE * fp, const char *prefix,
 	//	Print output sequence key
 	//
 	AOHKSaveSequence(fp, t + i);
+	fprintf(fp, "\n");
     }
 }
 
-//
-//	Save game table
-//
+///
+///	Save game table
+///
 static void AOHKSaveGameTable(FILE * fp, const char *prefix,
     const unsigned char *t, int n)
 {
@@ -1680,45 +1895,15 @@ static void AOHKSaveGameTable(FILE * fp, const char *prefix,
     for (i = 0; i < n; i += 2) {
 	fprintf(fp, "%s%s\t-> ", prefix, AOHKInternal2String[i / 2]);
 	AOHKSaveSequence(fp, t + i);
+	fprintf(fp, "\n");
     }
 }
 
-//
-//	Save macro table
-//
-static void AOHKSaveMacroTable(FILE * fp, const char *prefix,
-    const unsigned char **t, int n)
-{
-    int i;
-
-    for (i = 0; i < n; ++i) {
-	if (!t[i]) {			// Empty entry
-	    continue;
-	}
-	//
-	//	Print internal sequence code
-	//
-	fprintf(fp, "%s", prefix);
-	if (i == 100) {
-	    fprintf(fp, "00\t-> ");
-	} else if (i > 100) {
-	    fprintf(fp, "USR%d\t-> ", i - 100);
-	} else if (i > 89) {
-	    fprintf(fp, "%d#\t-> ", i % 10);
-	} else {
-	    fprintf(fp, "%d%d\t-> ", i / 10 + 1, i % 10);
-	}
-
-	//
-	//	Print output sequence key
-	//
-	AOHKSaveSequence(fp, t[i]);
-    }
-}
-
-//
-//	Save internals tables in a nice format.
-//
+///
+///	Save internals tables in a nice format.
+///
+///	@param file	File name, - for stdout.
+///
 void AOHKSaveTable(const char *file)
 {
     FILE *fp;
@@ -1726,7 +1911,7 @@ void AOHKSaveTable(const char *file)
     if (!strcmp(file, "-")) {		// stdout
 	fp = stdout;
     } else if (!(fp = fopen(file, "w+"))) {
-	Debug(5, "Can't open save file '%s'\n", file);
+	Debug(0, "Can't open save file '%s'\n", file);
 	return;
     }
     fprintf(fp,
@@ -1763,33 +1948,34 @@ void AOHKSaveTable(const char *file)
     AOHKSaveGameTable(fp, "**", (unsigned char *)AOHKNumberTable,
 	sizeof(AOHKNumberTable));
 
-    fprintf(fp, "//\t# Macro strings * key prefix\nmacro:\n");
-    AOHKSaveMacroTable(fp, "*", (const unsigned char **)AOHKMacroTable,
-	sizeof(AOHKMacroTable) / sizeof(*AOHKMacroTable));
+    fprintf(fp, "//\tmacros * key prefix\nmacro:\n");
+    AOHKSaveMapping(fp, "*", (unsigned char *)AOHKMacroTable,
+	sizeof(AOHKMacroTable));
 
-    AOHKSaveMacroTable(fp, "*0", (const unsigned char **)AOHKMacroQuoteTable,
-	sizeof(AOHKMacroQuoteTable) / sizeof(*AOHKMacroQuoteTable));
+    fprintf(fp, "//\tquoted macros *0 key prefix\n");
+    AOHKSaveMapping(fp, "*0", (unsigned char *)AOHKMacroQuoteTable,
+	sizeof(AOHKMacroQuoteTable));
 
     if (strcmp(file, "-")) {		// !stdout
 	fclose(fp);
     }
 }
 
-//
-//	Junk at end of line
-//
+///
+///	Junk at end of line
+///
 static void AOHKIsJunk(int linenr, const char *s)
 {
     for (; *s && isspace(*s); ++s) {
     }
     if (*s) {
-	Debug(5, "%d: Junk '%s' at end of line\n", linenr, s);
+	Debug(0, "%d: Junk '%s' at end of line\n", linenr, s);
     }
 }
 
-//
-//	Convert a string to key code.
-//
+///
+///	Convert a string to key code.
+///
 static int AOHKString2Key(const char *line, size_t l)
 {
     size_t i;
@@ -1815,9 +2001,9 @@ static int AOHKString2Key(const char *line, size_t l)
     return KEY_RESERVED;
 }
 
-//
-//	Convert a string to internal code.
-//
+///
+///	Convert a string to internal code.
+///
 static int AOHKString2Internal(const char *line, size_t l)
 {
     size_t i;
@@ -1832,9 +2018,9 @@ static int AOHKString2Internal(const char *line, size_t l)
     return -1;
 }
 
-//
-//	Parse convert line.
-//
+///
+///	Parse convert line.
+///
 static void AOHKParseConvert(char *line)
 {
     char *s;
@@ -1850,7 +2036,7 @@ static void AOHKParseConvert(char *line)
     l = s - line;
     key = AOHKString2Key(line, l);
     if (key == KEY_RESERVED) {		// Still not found giving up.
-	Debug(5, "Key '%.*s' not found\n", l, line);
+	Debug(0, "Key '%.*s' not found\n", l, line);
 	return;
     }
     //
@@ -1862,7 +2048,7 @@ static void AOHKParseConvert(char *line)
     //	    Need ->
     //
     if (strncmp(s, "->", 2)) {
-	Debug(5, "'->' expected not '%s'\n", s);
+	Debug(0, "'->' expected not '%s'\n", s);
 	return;
     }
     s += 2;
@@ -1884,23 +2070,23 @@ static void AOHKParseConvert(char *line)
     //
     internal = AOHKString2Internal(line, l);
     if (internal == -1) {
-	Debug(5, "Key '%.*s' not found\n", l, line);
+	Debug(0, "Key '%.*s' not found\n", l, line);
 	return;
     }
 
-    Debug(1, "Key %d -> %d\n", key, internal);
+    Debug(4, "Key %d -> %d\n", key, internal);
 
     if (key > 0 && (unsigned)key < sizeof(AOHKConvertTable)) {
 	AOHKConvertTable[key] = internal;
     } else {
-	Debug(5, "Key %d out of range\n", key);
+	Debug(0, "Key %d out of range\n", key);
     }
 }
 
-//
-//	Parse sequence '   ->  ...'
-//
-static void AOHKParseOutput(char *line, OHKey * out)
+///
+///	Parse sequence '   ->  ...'
+///
+static void AOHKParseOutput(int linenr, char *line, OHKey * out)
 {
     char *s;
     size_t l;
@@ -1917,7 +2103,7 @@ static void AOHKParseOutput(char *line, OHKey * out)
     //	    Need ->
     //
     if (strncmp(s, "->", 2)) {
-	Debug(5, "'->' expected not '%s'\n", s);
+	Debug(0, "'->' expected not '%s'\n", s);
 	return;
     }
     s += 2;
@@ -1946,10 +2132,16 @@ static void AOHKParseOutput(char *line, OHKey * out)
     //
     if (l == sizeof("qual") - 1
 	&& !strncasecmp(line, "qual", sizeof("qual") - 1)) {
+	if (modifier) {
+	    Debug(1, "%d: multiple modifier\n", linenr);
+	}
 	modifier = QUAL;
 	goto next;
     } else if (l == sizeof("sticky") - 1
 	&& !strncasecmp(line, "sticky", sizeof("sticky") - 1)) {
+	if (modifier) {
+	    Debug(1, "%d: multiple modifier\n", linenr);
+	}
 	modifier = STICKY;
 	goto next;
     } else if (l == sizeof("quote") - 1
@@ -1960,10 +2152,18 @@ static void AOHKParseOutput(char *line, OHKey * out)
 	modifier = RESET;
     } else if (l == sizeof("togame") - 1
 	&& !strncasecmp(line, "togame", sizeof("togame") - 1)) {
+	if (modifier) {
+	    Debug(1, "%d: multiple modifier\n", linenr);
+	}
 	modifier = TOGAME;
+	goto next;
     } else if (l == sizeof("tonum") - 1
 	&& !strncasecmp(line, "tonum", sizeof("tonum") - 1)) {
-	modifier = TONUM;;
+	if (modifier) {
+	    Debug(1, "%d: multiple modifier\n", linenr);
+	}
+	modifier = TONUM;
+	goto next;
     } else if (l == sizeof("special") - 1
 	&& !strncasecmp(line, "special", sizeof("special") - 1)) {
 	modifier = SPECIAL;
@@ -1973,7 +2173,7 @@ static void AOHKParseOutput(char *line, OHKey * out)
     } else if (l) {
 	i = AOHKString2Key(line, l);
 	if (i == KEY_RESERVED) {	// Still not found giving up.
-	    Debug(5, "Key '%.*s' not found\n", l, line);
+	    Debug(0, "Key '%.*s' not found\n", l, line);
 	    return;
 	}
 	// Look if its a modifier
@@ -2004,7 +2204,7 @@ static void AOHKParseOutput(char *line, OHKey * out)
 		    key ^= Q_GUI_R;
 		    goto next;
 		default:
-		    Debug(5, "Key '%s' not found\n", line);
+		    Debug(0, "Key '%s' not found\n", line);
 		    return;
 	    }
 	} else if (*s && isspace(*s) && *s != '\n') {
@@ -2030,18 +2230,22 @@ static void AOHKParseOutput(char *line, OHKey * out)
 	    key = i;
 	}
     }
-    Debug(1, "Found %d, %d\n", modifier, key);
+    Debug(4, "Found modifier %d, key %d\n", modifier, key);
     if (out) {
 	out->Modifier = modifier;
 	out->KeyCode = key;
     }
-    AOHKIsJunk(-1, s);
+    AOHKIsJunk(linenr, s);
 }
 
-//
-//	Parse mapping line.
-//
-static void AOHKParseMapping(char *line)
+///
+///	Parse mapping line.
+///
+///	[internal key sequence] -> [output key sequence]
+///
+///	@param line	pointer into current line
+///
+static void AOHKParseMapping(int linenr, char *line)
 {
     char *s;
     int internal;
@@ -2061,84 +2265,94 @@ static void AOHKParseMapping(char *line)
     }
     l = s - line;
 
-    // Quoted game mode
+    // Quoted game mode '0*#'
     if (line[0] == '0' && line[1] == '*' && line[2] == '#') {
 	internal = AOHKString2Internal(line + 3, l - 3);
 	if (internal == -1) {
-	    Debug(5, "Key '%s' not found\n", line);
+	    Debug(0, "Key '%s' not found\n", line);
 	    return;
 	}
-	Debug(1, "Quoted game mode: %d\n", internal);
-	AOHKParseOutput(s, AOHKQuoteGameTable + internal);
+	Debug(4, "Quoted game mode: %d\n", internal);
+	AOHKParseOutput(linenr, s, AOHKQuoteGameTable + internal);
 	return;
     }
     // Game mode '*#' internal key name
     if (line[0] == '*' && line[1] == '#') {
 	internal = AOHKString2Internal(line + 2, l - 2);
 	if (internal == -1) {
-	    Debug(5, "Key '%s' not found\n", line);
+	    Debug(0, "Key '%s' not found\n", line);
 	    return;
 	}
-	Debug(1, "Game mode: %d\n", internal);
-	AOHKParseOutput(s, AOHKGameTable + internal);
+	Debug(4, "Game mode: %d\n", internal);
+	AOHKParseOutput(linenr, s, AOHKGameTable + internal);
 	return;
     }
     // Number mode '**' internal key name
     if (line[0] == '*' && line[1] == '*') {
 	internal = AOHKString2Internal(line + 2, l - 2);
 	if (internal == -1) {
-	    Debug(5, "Key '%s' not found\n", line);
+	    Debug(0, "Key '%s' not found\n", line);
 	    return;
 	}
-	Debug(1, "Number mode: %d\n", internal);
-	AOHKParseOutput(s, AOHKNumberTable + internal);
+	Debug(4, "Number mode: %d\n", internal);
+	AOHKParseOutput(linenr, s, AOHKNumberTable + internal);
 	return;
     }
     // Macro key '*'
     if (line[0] == '*') {
-	Debug(1, "Macro: ");
+	Debug(4, "Macro: ");
 	macro = 1;
 	++line;
 	--l;
     }
     // Super Quote
     if (line[0] == '0' && line[1] == '#') {
-	Debug(1, "Super quote ");
+	Debug(4, "Super quote ");
 	super = 1;
 	line += 2;
 	l -= 2;
 	// Quote
     } else if (line[0] == '0') {
-	Debug(1, "Quote ");
+	Debug(4, "Quote ");
 	quote = 1;
 	line += 1;
 	l -= 1;
     }
 
     if (!l) {				// only 0#
+	// FIXME: shouldn't be correct
 	super = 0;
-	internal = 90;
+	internal = HASH_START;
 	goto parseon;
     }
-
-    if (l == 1 && quote && line[0] == '0') {	// 00
-	quote = 0;
-	internal = 100;
-	goto parseon;
+    if (l == 1) {
+	if (quote && line[0] == '0') {	// 00
+	    quote = 0;
+	    internal = DOUBLE_QUOTE;
+	    goto parseon;
+	}
+	if (quote && line[0] == '*') {	// 0*
+	    quote = 0;
+	    internal = STAR_START;
+	    goto parseon;
+	}
     }
-
     if (l == 2) {
 	if (line[0] == '0' && line[1] == '#') {
-	    internal = 90;
+	    internal = HASH_START;
+	} else if (line[0] == '0' && line[1] == '*') {
+	    internal = STAR_START;
 	} else if (line[0] == '0' && line[1] == '0') {
-	    internal = 100;
+	    internal = DOUBLE_QUOTE;
 	} else if (line[0] >= '1' && line[0] <= '9' && line[1] >= '0'
 	    && line[1] <= '9') {
 	    internal = (line[0] - '1') * 10 + line[1] - '0';
 	} else if (line[0] >= '1' && line[0] <= '9' && line[1] == '#') {
-	    internal = 90 + line[0] - '0';
+	    internal = HASH_START + line[0] - '0';
+	} else if (line[0] >= '1' && line[0] <= '9' && line[1] == '*') {
+	    internal = STAR_START + line[0] - '0';
 	} else {
-	    Debug(5, "Illegal internal key '%s'\n", line);
+	    Debug(0, "%d: Illegal internal key '%s'\n", linenr, line);
 	    return;
 	}
 	goto parseon;
@@ -2146,39 +2360,38 @@ static void AOHKParseMapping(char *line)
 
     if (l == 4 && line[0] == 'U' && line[1] == 'S' && line[2] == 'R') {
 	if (line[3] < '1' || line[3] > '8') {
-	    Debug(5, "Key '%s' not found\n", line);
+	    Debug(0, "Key '%s' not found\n", line);
 	    return;
 	}
-	internal = 100 + line[3] - '0';
+	internal = USR_START + line[3] - '1';
 	goto parseon;
     }
 
-    Debug(5, "Unsupported internal key sequence: %s", line);
+    Debug(0, "%d: Unsupported internal key sequence: %s\n", linenr, line);
     return;
 
   parseon:
-    Debug(1, "Key %d\n", internal);
+    Debug(4, "Key %d\n", internal);
     if (macro && quote) {
-	Debug(5, "Macro + quote not supported\n");
+	AOHKParseOutput(linenr, s, AOHKMacroQuoteTable + internal);
     } else if (macro && super) {
-	Debug(5, "Macro + super not supported\n");
+	Debug(0, "Macro + super not supported\n");
     } else if (macro) {
-	if (!AOHKMacroTable[internal]) {
-	    AOHKMacroTable[internal] = malloc(2);
-	}
-	AOHKParseOutput(s, (OHKey *) AOHKMacroTable[internal]);
+	AOHKParseOutput(linenr, s, AOHKMacroTable + internal);
     } else if (super) {
-	AOHKParseOutput(s, AOHKSuperTable + internal);
+	AOHKParseOutput(linenr, s, AOHKSuperTable + internal);
     } else if (quote) {
-	AOHKParseOutput(s, AOHKQuoteTable + internal);
+	AOHKParseOutput(linenr, s, AOHKQuoteTable + internal);
     } else {
-	AOHKParseOutput(s, AOHKTable + internal);
+	AOHKParseOutput(linenr, s, AOHKTable + internal);
     }
 }
 
-//
-//	Load key mapping.
-//
+///
+///	Load key mapping.
+///
+///	@param file	File name, - for stdin.
+///
 void AOHKLoadTable(const char *file)
 {
     FILE *fp;
@@ -2194,7 +2407,7 @@ void AOHKLoadTable(const char *file)
     if (!strcmp(file, "-")) {		// stdin
 	fp = stdin;
     } else if (!(fp = fopen(file, "r"))) {
-	Debug(5, "Can't open load file '%s'\n", file);
+	Debug(0, "Can't open load file '%s'\n", file);
 	return;
     }
 
@@ -2213,32 +2426,43 @@ void AOHKLoadTable(const char *file)
 	//
 	//	Remove comments // to end of line
 	//
-	for (s = line; *s; ++s) {
-	    if (*s == '/' && s[1] == '/') {
-		*s = '\0';
-		break;
-	    }
+	if ((s = strstr(line, "//"))) {
+	    *s = '\0';
 	}
+	//
+	//	Remove trailing \n
+	//
+	if ((s = strchr(line, '\n'))) {
+	    *s = '\0';
+	}
+	/*
+	   for (s = line; *s; ++s) {
+	   if (*s == '/' && s[1] == '/') {
+	   *s = '\0';
+	   break;
+	   }
+	   }
+	 */
 	if (!*line) {			// Empty line
 	    continue;
 	}
-	Debug(1, "Parse '%s'\n", line);
+	Debug(5, "Parse '%s'\n", line);
 	if (!strncasecmp(line, "convert:", sizeof("convert:") - 1)) {
-	    Debug(1, "'%s'\n", line);
+	    Debug(5, "'%s'\n", line);
 	    state = Convert;
 	    AOHKResetConvertTable();
 	    AOHKIsJunk(linenr, line + sizeof("convert:") - 1);
 	    continue;
 	}
 	if (!strncasecmp(line, "mapping:", sizeof("mapping:") - 1)) {
-	    Debug(1, "'%s'\n", line);
+	    Debug(5, "'%s'\n", line);
 	    state = Mapping;
 	    AOHKResetMappingTable();
 	    AOHKIsJunk(linenr, line + sizeof("mapping:") - 1);
 	    continue;
 	}
 	if (!strncasecmp(line, "macro:", sizeof("macro:") - 1)) {
-	    Debug(1, "'%s'\n", line);
+	    Debug(5, "'%s'\n", line);
 	    state = Macro;
 	    AOHKResetMacroTable();
 	    AOHKIsJunk(linenr, line + sizeof("macro:") - 1);
@@ -2246,7 +2470,7 @@ void AOHKLoadTable(const char *file)
 	}
 	switch (state) {
 	    case Nothing:
-		Debug(5, "%d: Need convert: or mapping: or macro: first\n",
+		Debug(0, "%d: Need convert: or mapping: or macro: first\n",
 		    linenr);
 		break;
 	    case Convert:
@@ -2254,13 +2478,13 @@ void AOHKLoadTable(const char *file)
 		break;
 	    case Mapping:
 	    case Macro:
-		AOHKParseMapping(line);
+		AOHKParseMapping(linenr, line);
 		break;
 	}
     }
 
     if (!linenr) {
-	Debug(5, "Empty file '%s'\n", file);
+	Debug(1, "Empty file '%s'\n", file);
     }
 
     if (strcmp(file, "-")) {		// !stdin
@@ -2272,12 +2496,11 @@ void AOHKLoadTable(const char *file)
 //	Default Keymaps.
 //----------------------------------------------------------------------------
 
+///
+///	American keyboard layout default mapping.
+///
+static OHKey AOHKUsTable[11 * 10 + 1 + 8] = {
 //	*INDENT-OFF*
-
-//
-//	American keyboard layout default mapping.
-//
-static OHKey AOHKUsTable[10*10+1+8] = {
 /*10*/ { QUOTE,		KEY_RESERVED },	// QUOTE
 /*11*/ { 0,		KEY_1	},	// 1
 /*12*/ { 0,		KEY_I	},	// i
@@ -2380,6 +2603,27 @@ static OHKey AOHKUsTable[10*10+1+8] = {
 /*8#*/ { 0,		KEY_UP	},	// CURSOR-UP
 /*9#*/ { 0,		KEY_PAGEUP },	// PAGE-UP
 
+#if 0
+/*##*/ { 0,		KEY_RESERVED },	// Not possible! # is already repeat
+/**#*/ { 0,		TOGAME },	// ENTER GAME MODE
+#endif
+
+/*0**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*1**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*2**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*3**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*4**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*5**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*6**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*7**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*8**/ { RESET,		KEY_RESERVED },	// (FREE)
+/*9**/ { RESET,		KEY_RESERVED },	// (FREE)
+
+#if 0
+/*#**/ { 0,		KEY_RESERVED },	// Not possible! # is already repeat
+/****/ { 0,		TONUM },	// ENTER NUMBER MODE
+#endif
+
 /*00*/ { 0,		KEY_0	},	// 0
 
 /*USR1*/ { QUAL,	Q_SHFT_L },	// Shift_L
@@ -2392,12 +2636,14 @@ static OHKey AOHKUsTable[10*10+1+8] = {
 /*USR8*/ { QUAL,	Q_GUI_R },	// Gui_R
 
 // FIXME: Should I move game mode table to here?
+//	*INDENT-ON*
 };
 
-//
-//	American keyboard layout default mapping.
-//
-static OHKey AOHKUsQuoteTable[10*10+1+8] = {
+///
+///	American keyboard layout default quote mapping.
+///
+static OHKey AOHKUsQuoteTable[11 * 10 + 1 + 8] = {
+//	*INDENT-OFF*
 /*010*/ { RESET,	KEY_RESERVED },	// RESET
 /*011*/ { 0,		KEY_F1	},	// F1
 /*012*/ { SHIFT,	KEY_I	},	// I
@@ -2441,13 +2687,13 @@ static OHKey AOHKUsQuoteTable[10*10+1+8] = {
 /*050*/ { RESET,	KEY_RESERVED },	// RESET
 /*051*/ { QUAL,		Q_SHFT_R },	// Shift_R
 /*052*/ { SHIFT,	KEY_BACKSLASH},	// | (QUOTE \, doubled)
-/*053*/ { SHIFT,	KEY_9	},	// ( (FREE)
+/*053*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*054*/ { SHIFT,	KEY_SPACE },	// SHIFT Space
 /*055*/ { 0,		KEY_F5	},	// F5
 /*056*/ { SHIFT,	KEY_TAB	},	// SHIFT Tabulator
 /*057*/ { QUAL,		Q_GUI_R },	// Gui_R
 /*058*/ { SHIFT,	KEY_LEFTBRACE },// { (QUOTE [, doubled)
-/*059*/ { SHIFT,	KEY_0	},	// ) (FREE)
+/*059*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*060*/ { RESET,	KEY_RESERVED },	// RESET
 /*061*/ { SHIFT,	KEY_E	},	// NO: ¤
 /*062*/ { SHIFT,	KEY_B	},	// B
@@ -2457,7 +2703,7 @@ static OHKey AOHKUsQuoteTable[10*10+1+8] = {
 /*066*/ { 0,		KEY_F6	},	// F6
 /*067*/ { 0,		KEY_KPPLUS },	// KP-+
 /*068*/ { SHIFT,	KEY_U	},	// U
-/*069*/ { SHIFT,	KEY_RIGHTBRACE},// { (FREE)
+/*069*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*070*/ { RESET,	KEY_RESERVED },	// RESET
 /*071*/ { 0,		KEY_SYSRQ },	// PRINT/SYSRQ
 /*072*/ { SHIFT,	KEY_H	},	// H
@@ -2482,7 +2728,7 @@ static OHKey AOHKUsQuoteTable[10*10+1+8] = {
 /*091*/ { 0,		KEY_COMPOSE },	// MENU
 /*092*/ { SHIFT,	KEY_P	},	// P
 /*093*/ { 0,		KEY_F12	},	// F12
-/*094*/ { 0,		KEY_RESERVED },	// (FREE)
+/*094*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*095*/ { SHIFT,	KEY_G	},	// G
 /*096*/ { SPECIAL,	KEY_RESERVED },	// ENTER SPECIAL MODE
 /*097*/ { 0,		KEY_KPSLASH },	// KP-/
@@ -2500,6 +2746,17 @@ static OHKey AOHKUsQuoteTable[10*10+1+8] = {
 /*08#*/ { 0,		KEY_KP8	},	// KP-8
 /*09#*/ { 0,		KEY_KP9	},	// KP-9
 
+/*00**/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
+/*01**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*02**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*03**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*04**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*05**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*06**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*07**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*08**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*09**/ { RESET,	KEY_RESERVED },	// (FREE)
+
 /*000*/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
 
 /*0USR1*/ { QUAL,	Q_SHFT_R },	// Shift_R
@@ -2510,12 +2767,14 @@ static OHKey AOHKUsQuoteTable[10*10+1+8] = {
 /*0USR6*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
 /*0USR7*/ { QUAL,	Q_ALT_L },	// Alt_L
 /*0USR8*/ { QUAL,	Q_GUI_L },	// Gui_L
+//	*INDENT-ON*
 };
 
-//
-//	German keyboard layout default mapping.
-//
-static OHKey AOHKDeTable[10*10+1+8] = {
+///
+///	German keyboard layout default mapping.
+///
+static OHKey AOHKDeTable[11 * 10 + 1 + 8] = {
+//	*INDENT-OFF*
 /*10*/ { QUOTE,		KEY_RESERVED },	// QUOTE
 /*11*/ { 0,		KEY_1	},	// 1
 /*12*/ { 0,		KEY_I	},	// i
@@ -2525,7 +2784,8 @@ static OHKey AOHKDeTable[10*10+1+8] = {
 /*16*/ { 0,		KEY_V	},	// v
 /*17*/ { 0,		KEY_APOSTROPHE },// ä
 /*18*/ { 0,		KEY_D	},	// d
-/*19*/ { RESET,		KEY_RESERVED },	// (FREE)
+//*19*/ { RESET,		KEY_RESERVED },	// (FREE)
+/*19*/ { MACRO,		0 },		// macro test
 /*20*/ { QUOTE,		KEY_RESERVED },	// QUOTE
 /*21*/ { 0,		KEY_ENTER },	// Return
 /*22*/ { 0,		KEY_2	},	// 2
@@ -2606,7 +2866,7 @@ static OHKey AOHKDeTable[10*10+1+8] = {
 /*97*/ { SHIFT,		KEY_7	},	// /
 /*98*/ { 0,		KEY_C	},	// c
 /*99*/ { 0,		KEY_9	},	// 9
-
+// 9 * 10
 /*0#*/ { 0,		KEY_INSERT },	// INSERT
 /*1#*/ { 0,		KEY_END	},	// END
 /*2#*/ { 0,		KEY_DOWN },	// CURSOR-DOWN
@@ -2617,9 +2877,20 @@ static OHKey AOHKDeTable[10*10+1+8] = {
 /*7#*/ { 0,		KEY_HOME },	// HOME
 /*8#*/ { 0,		KEY_UP	},	// CURSOR-UP
 /*9#*/ { 0,		KEY_PAGEUP },	// PAGE-UP
-
+// 10 * 10
+/*0**/ { TONUM,		KEY_KP0 },	// (FREE)
+/*1**/ { TONUM,		KEY_KP1 },	// (FREE)
+/*2**/ { TONUM,		KEY_KP2 },	// (FREE)
+/*3**/ { TONUM,		KEY_KP3 },	// (FREE)
+/*4**/ { TONUM,		KEY_KP4 },	// (FREE)
+/*5**/ { TONUM,		KEY_KP5 },	// (FREE)
+/*6**/ { TONUM,		KEY_KP6 },	// (FREE)
+/*7**/ { TONUM,		KEY_KP7 },	// (FREE)
+/*8**/ { TONUM,		KEY_KP8 },	// (FREE)
+/*9**/ { TONUM,		KEY_KP9 },	// (FREE)
+// 11 * 10
 /*00*/ { 0,		KEY_0	},	// 0
-
+// 11 * 10 + 1
 /*USR1*/ { QUAL,	Q_SHFT_L },	// Shift_L
 /*USR2*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
 /*USR3*/ { QUAL,	Q_ALT_L },	// Alt_L
@@ -2630,12 +2901,14 @@ static OHKey AOHKDeTable[10*10+1+8] = {
 /*USR8*/ { QUAL,	Q_GUI_R },	// Gui_R
 
 // FIXME: Should I move game mode table to here?
+//	*INDENT-ON*
 };
 
-//
-//	German keyboard layout default mapping.
-//
-static OHKey AOHKDeQuoteTable[10*10+1+8] = {
+///
+///	German keyboard layout default quote mapping.
+///
+static OHKey AOHKDeQuoteTable[11 * 10 + 1 + 8] = {
+//	*INDENT-OFF*
 /*010*/ { RESET,	KEY_RESERVED },	// RESET
 /*011*/ { 0,		KEY_F1	},	// F1
 /*012*/ { SHIFT,	KEY_I	},	// I
@@ -2679,13 +2952,13 @@ static OHKey AOHKDeQuoteTable[10*10+1+8] = {
 /*050*/ { RESET,	KEY_RESERVED },	// RESET
 /*051*/ { QUAL,		Q_SHFT_R },	// Shift_R
 /*052*/ { ALTGR,	KEY_102ND },	// | (QUOTE \, doubled)
-/*053*/ { SHIFT,	KEY_8	},	// ( (FREE)
+/*053*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*054*/ { SHIFT,	KEY_SPACE },	// SHIFT Space
 /*055*/ { 0,		KEY_F5	},	// F5
 /*056*/ { SHIFT,	KEY_TAB	},	// SHIFT Tabulator
 /*057*/ { QUAL,		Q_GUI_R },	// Gui_R
 /*058*/ { ALTGR,	KEY_6	},	// { (QUOTE [, doubled)
-/*059*/ { SHIFT,	KEY_9	},	// ) (FREE)
+/*059*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*060*/ { RESET,	KEY_RESERVED },	// RESET
 /*061*/ { ALTGR,	KEY_E	},	// ¤
 /*062*/ { SHIFT,	KEY_B	},	// B
@@ -2695,7 +2968,7 @@ static OHKey AOHKDeQuoteTable[10*10+1+8] = {
 /*066*/ { 0,		KEY_F6	},	// F6
 /*067*/ { 0,		KEY_KPPLUS },	// KP-+
 /*068*/ { SHIFT,	KEY_U	},	// U
-/*069*/ { ALTGR,	KEY_7	},	// { (FREE)
+/*069*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*070*/ { RESET,	KEY_RESERVED },	// RESET
 /*071*/ { 0,		KEY_SYSRQ },	// PRINT/SYSRQ
 /*072*/ { SHIFT,	KEY_H	},	// H
@@ -2720,7 +2993,7 @@ static OHKey AOHKDeQuoteTable[10*10+1+8] = {
 /*091*/ { 0,		KEY_COMPOSE },	// MENU
 /*092*/ { SHIFT,	KEY_P	},	// P
 /*093*/ { 0,		KEY_F12	},	// F12
-/*094*/ { 0,		KEY_RESERVED },	// (FREE)
+/*094*/ { RESET,	KEY_RESERVED },	// (FREE)
 /*095*/ { SHIFT,	KEY_G	},	// G
 /*096*/ { SPECIAL,	KEY_RESERVED },	// ENTER SPECIAL MODE
 /*097*/ { 0,		KEY_KPSLASH },	// KP-/
@@ -2738,6 +3011,17 @@ static OHKey AOHKDeQuoteTable[10*10+1+8] = {
 /*08#*/ { 0,		KEY_KP8	},	// KP-8
 /*09#*/ { 0,		KEY_KP9	},	// KP-9
 
+/*00**/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
+/*01**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*02**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*03**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*04**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*05**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*06**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*07**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*08**/ { RESET,	KEY_RESERVED },	// (FREE)
+/*09**/ { RESET,	KEY_RESERVED },	// (FREE)
+
 /*000*/ { 0,		KEY_RESERVED },	// Not possible! 00 is 0
 
 /*0USR1*/ { QUAL,	Q_SHFT_R },	// Shift_R
@@ -2748,17 +3032,17 @@ static OHKey AOHKDeQuoteTable[10*10+1+8] = {
 /*0USR6*/ { QUAL,	Q_CTRL_L },	// Ctrl_L
 /*0USR7*/ { QUAL,	Q_ALT_L },	// Alt_L
 /*0USR8*/ { QUAL,	Q_GUI_L },	// Gui_L
+//	*INDENT-ON*
 };
 
-//	*INDENT-ON*
-
-//
-//	Setup compiled keyboard mappings.
-//
+///
+///	Setup compiled keyboard mappings.
+///
+///	@param lang	two character iso language code
+///
 void AOHKSetLanguage(const char *lang)
 {
     unsigned i;
-    unsigned char *s;
 
     Debug(2, "Set Language '%s'\n", lang);
     if (!strcmp("de", lang)) {
@@ -2768,15 +3052,45 @@ void AOHKSetLanguage(const char *lang)
 	memcpy(AOHKTable, AOHKUsTable, sizeof(AOHKTable));
 	memcpy(AOHKQuoteTable, AOHKUsQuoteTable, sizeof(AOHKQuoteTable));
     } else {
-	Debug(5, "Language '%s' isn't suported\n", lang);
+	Debug(0, "Language '%s' isn't suported\n", lang);
 	return;
     }
 
+    if (1) {
+	OHKey version[] = {
+	    {0, KEY_A}
+	    ,
+	    {0, KEY_O}
+	    ,
+	    {0, KEY_H}
+	    ,
+	    {0, KEY_K}
+	    ,
+	    {0, KEY_SPACE}
+	    ,
+	    {0, KEY_V}
+	    ,
+	    {0, KEY_0}
+	    ,
+	    {0, KEY_DOT}
+	    ,
+	    {0, KEY_0}
+	    ,
+	    {0, KEY_6}
+	    ,
+	    {0, KEY_RESERVED}
+	    ,
+	};
+	//AOHKString2Macro("aohk v0.06");
+
+	AddMacro(version);
+    }
     //
     //	Convert Normal table into macro table. Adding Ctrl
     //
     for (i = 0; i < sizeof(AOHKTable) / sizeof(*AOHKTable); ++i) {
-	s = malloc(2);
+	int mod;
+
 	switch (AOHKTable[i].Modifier) {
 	    case RESET:
 	    case QUOTE:
@@ -2785,20 +3099,46 @@ void AOHKSetLanguage(const char *lang)
 	    case TOGAME:
 	    case TONUM:
 	    case SPECIAL:
-		s[0] = AOHKTable[i].Modifier;
+	    case MACRO:
+		mod = AOHKTable[i].Modifier;
 		break;
 	    default:
-		s[0] = AOHKTable[i].Modifier ^ CTL;
+		mod = AOHKTable[i].Modifier ^ CTL;
 		break;
 	}
-	s[1] = AOHKTable[i].KeyCode;
-	AOHKMacroTable[i] = s;
+	AOHKMacroTable[i].Modifier = mod;
+	AOHKMacroTable[i].KeyCode = AOHKTable[i].KeyCode;
+    }
+    //
+    //	Convert Quote table into quote macro table. Adding Ctrl
+    //
+    for (i = 0; i < sizeof(AOHKQuoteTable) / sizeof(*AOHKQuoteTable); ++i) {
+	int mod;
+
+	switch (AOHKQuoteTable[i].Modifier) {
+	    case RESET:
+	    case QUOTE:
+	    case QUAL:
+	    case STICKY:
+	    case TOGAME:
+	    case TONUM:
+	    case SPECIAL:
+	    case MACRO:
+		mod = AOHKQuoteTable[i].Modifier;
+		break;
+	    default:
+		mod = AOHKQuoteTable[i].Modifier ^ CTL;
+		break;
+	}
+	AOHKMacroQuoteTable[i].Modifier = mod;
+	AOHKMacroQuoteTable[i].KeyCode = AOHKQuoteTable[i].KeyCode;
     }
     //
     //	Convert Normal table into super quote table. Adding Alt
     //
     for (i = 0; i < sizeof(AOHKTable) / sizeof(*AOHKTable); ++i) {
-	s = (unsigned char *)&AOHKSuperTable[i];
+	int mod;
+
 	switch (AOHKTable[i].Modifier) {
 	    case RESET:
 	    case QUOTE:
@@ -2807,12 +3147,14 @@ void AOHKSetLanguage(const char *lang)
 	    case TOGAME:
 	    case TONUM:
 	    case SPECIAL:
-		s[0] = AOHKTable[i].Modifier;
+	    case MACRO:
+		mod = AOHKTable[i].Modifier;
 		break;
 	    default:
-		s[0] = AOHKTable[i].Modifier ^ ALT;
+		mod = AOHKTable[i].Modifier ^ ALT;
 		break;
 	}
-	s[1] = AOHKTable[i].KeyCode;
+	AOHKSuperTable[i].Modifier = mod;
+	AOHKSuperTable[i].KeyCode = AOHKTable[i].KeyCode;
     }
 }

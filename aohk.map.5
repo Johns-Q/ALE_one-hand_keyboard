@@ -52,19 +52,62 @@ ignored.
 .B a - z 0-9 ...
 Scancode for the character key.
 .TP
-.B ESC BackSpace Tab Enter LeftCtrl LeftShift RightShift KP_Multiply 
+.B ESC BackSpace Tab Enter LeftCtrl LeftShift RightShift KP_Multiply ...
 Scancode for the named key.
+
+.SH SPECIAL COMMANDS
+.TP
+.B QUAL
+Qualifier
+.TP
+.B STICKY
+Sticky qualifier
+.TP
+.B QUOTE
+Quote
+.TP
+.B RESET
+Reset
+.TP
+.B TOGAME
+Enters game mode
+.TP
+.B TONUM
+Enters number mode
+.TP
+.B SPECIAL
+Enters special mode
+.TP
+.B RESERVED
+Reserved key code.
 
 .SH SECTIONS
 .TP
 .B convert:
-Input mapping.
+Starts the input mapping.
+
+character -> symbol
+
+"character" is the name for a key, which is mapped to an internal "symbol".
+0 -> 0 maps the key "0" to the internal symbol "0".
 .TP
 .B mapping:
-Output mapping.
+Starts the output mapping.
+
+symbol-sequence -> character
+
+"symbol-sequence" is a valid sequence of internal symbols, which is mapped
+to a "character" key. 12 -> i maps the sequence "12" to the keycode for i.
+
 .TP
 .B macro:
-Macro mapping.
+Starts the macro mapping (Isn't full supported yet).
+
+*symbol-sequence -> character-list
+
+"symbol-sequence" is a valid sequence of internal symbols, which is mapped
+to a character-list. *12 -> LeftCtrl i maps the sequence "*12" to the
+keycode sequence of left control key and i key.
 
 .SH EXAMPLE
 .nf

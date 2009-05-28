@@ -1,52 +1,81 @@
 .\"
-.\"	utv.1		 	µtv man page
+.\"	aohkd.1		 	ALE one-hand keyboard daemon man page
 .\"
 .\"	Copyright (c) 2009 by Johns.  All Rights Reserved.
 .\"
 .\"	Contributor(s):
 .\"
-.\"	License: AGPLv3
+.\"	License: GPLv2
 .\"
-.\"	This program is free software: you can redistribute it and/or modify
-.\"	it under the terms of the GNU Affero General Public License as
-.\"	published by the Free Software Foundation, either version 3 of the
-.\"	License.
+.\"	This file is part of ALE one-hand keyboard
 .\"
-.\"	This program is distributed in the hope that it will be useful,
-.\"	but WITHOUT ANY WARRANTY; without even the implied warranty of
-.\"	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-.\"	GNU Affero General Public License for more details.
+.\"	This program is free software; you can redistribute it and/or modify
+.\"	it under the terms of the GNU General Public License as published by
+.\"	the Free Software Foundation; only version 2 of the License.
 .\"
-.\"	$Id: $
+.\"	$Id$
 .\" ------------------------------------------------------------------------
 .pc
-.TH "µTV" 1 "2009-02-11" "0.01" "µTV Manual"
+.TH "aohkd" 1 "2009-05-27" "0.06" "ALE one-hand keyboard daemon Manual"
 
 .SH NAME
-µtv \- a lightweight and efficient digital television (DVB) viewer for x11
+aohkd \- is an userland driver for the ALE one-hand keyboard.
 
 .SH SYNOPSIS
-.B µtv
+.B aohkd
 .I [-?|-h]
-.I [-c]
-.I [-v]
-.I [-t]
+.I [-b]
+.I [-L]
+.I [-D]
+.I [-d dev]
+.I [-v id]
+.I [-p id]
+.I [-n]
+.I [-l lang]
+.I [-s file]
+.I [mappings]
 
 .SH DESCRIPTION
-µTV is a x11 desktop application for watching digital television services
-that use the DVB standard.  µTV works with DVB-S/DVB-S2 and DVB-T cards that
-have kernel driver support.
+aohkd is an user space driver for the ALE one-hand keyboard.
 
-µtv uses ffmpeg as codec library and SDL as output library.
+The ALE one-hand keyboard is a design study.  There is no plug&play hardware
+available yet.  It is currently a software only solution.
+
+You can type with only one hand (just one finger is possible) using a standard
+keyboard.  Only the number pad is used, the remaining keyboard is still full
+functional.
+
+It is a no chording solutions.  Instead of pressing "a", you should type "42",
+press and release "4" than press and release the "2".  Which should gives you
+the half speed of normal typing.  But you don't have to move the hand, so
+higher speed is possible.  You can save the travel time and you can use the
+mouse with one hand and the keyboard with the other.
+
+PS/2 and USB keyboards and keypads are supported.  Also special input devices
+like tactical commander, zboard, nostromo speedpad, Pro Gamer Command Pad,
+ErgoMedia 500 should work.
+
+Useful for the disabled user, professionals and gamers.
 
 .SH OPTIONS
 .TP
 .B -?|-h
 Show help options.
 .TP
+.B -b
+Background.  aohkd run in the background as daemon.  Errors will be logged
+to syslog.
+.TP
+.B FIXME:
+Need to complete the man pages
 
 .SH AUTHOR
-Johns (2008-2009) <johns98@gmx.net>.
+
+.SH AUTHOR
+Lutz "Johns" Sammer (2000-9) <johns98@gmx.net>.
+
+.SH SEE ALSO
+aohk.map(5) for the input/output keyboard mapping.
 
 .SH COPYRIGHT
-Copyright (C) 2008-2009 Johns.  License: AGPLv3
+Copyright (C) 2009 Johns.  License: GPLv2
