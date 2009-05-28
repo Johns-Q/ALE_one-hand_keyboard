@@ -1,0 +1,85 @@
+.\"
+.\"	aohk.map.5	 	ALE one-hand keyboard mapping man page
+.\"
+.\"	Copyright (c) 2009 by Johns.  All Rights Reserved.
+.\"
+.\"	Contributor(s):
+.\"
+.\"	License: GPLv2
+.\"
+.\"	This file is part of ALE one-hand keyboard
+.\"
+.\"	This program is free software; you can redistribute it and/or modify
+.\"	it under the terms of the GNU General Public License as published by
+.\"	the Free Software Foundation; only version 2 of the License.
+.\"
+.\"	$Id$
+.\" ------------------------------------------------------------------------
+.pc
+.TH "aohk.map" 5 "2009-05-20" "0.06" "ALE one-hand keyboard mapping Manual"
+
+.SH NAME
+aohk.map \- input/output keyboard mapping for ALE one-hand keyboard daemon.
+
+.SH DESCRIPTION
+Configures the mapping of input keys to internal symbols and internal symbol
+sequences to output keys or macros.
+
+.SH COMMENTS
+.TP
+.B //
+The sequence "//" introduces a line comment.  Everything after the "//" is
+ignored.
+
+.SH INTERNAL SYMBOLS
+.TP
+.B SPECIAL
+.TP
+.B 0
+.TP
+.B *
+.TP
+.B 1 2 3 4 5 6 7 8 9
+.TP
+.B #
+.TP
+.B USR1 USR2 USR3 USR4 USR5 USR6 USR7 USR8
+.TP
+.B NOP
+
+.SH CHARACTERS
+.TP
+.B a - z 0-9 ...
+Scancode for the character key.
+.TP
+.B ESC BackSpace Tab Enter LeftCtrl LeftShift RightShift KP_Multiply 
+Scancode for the named key.
+
+.SH SECTIONS
+.TP
+.B convert:
+Input mapping.
+.TP
+.B mapping:
+Output mapping.
+.TP
+.B macro:
+Macro mapping.
+
+.SH EXAMPLE
+.nf
+	convert:
+		q -> SPECIAL
+	mapping:
+		12 -> i
+	macro:
+		*12 -> LeftCtrl i
+.fi
+.SH AUTHOR
+"Johns" Lutz Sammer (2000-2009) <johns98@gmx.net>.
+
+.SH SEE ALSO
+aohk-daemon(1) for the user space daemon.
+
+.SH COPYRIGHT
+Copyright (C) 2009 Johns.  License: GPLv2
