@@ -41,6 +41,7 @@
 #include <poll.h>
 
 #include "aohk.h"
+#include "uinput.h"
 
 #define SYSTEM_VENDOR_ID	0x0001	///< System vendor
 #define PS2_KEYBOARD_ID		0x0001	///< System keyboard
@@ -435,139 +436,16 @@ void EventLEDs(int fd, int num, int state)
 }
 
 //----------------------------------------------------------------------------
-//	Uinput
-//----------------------------------------------------------------------------
-
-///
-///	Open uinput device
-///
-int OpenUInput(void)
-{
-    int i;
-    int fd;
-    struct uinput_user_dev device;
-
-    //	open uinput device file
-    if ((fd = open("/dev/misc/uinput", O_RDWR)) < 0
-	&& (fd = open("/dev/input/uinput", O_RDWR)) < 0
-	&& (fd = open("/dev/uinput", O_RDWR)) < 0) {
-	perror("open()");
-	return fd;
-    }
-
-    memset(&device, 0, sizeof(device));
-
-    //	sets the name of our device
-    strncpy(device.name, "ALE OneHand Keyboard", UINPUT_MAX_NAME_SIZE);
-
-    //	its bus
-    device.id.bustype = BUS_USB;
-
-    //	and vendor id/product id/version
-    device.id.vendor = 0x414C;
-    device.id.product = 0x4F48;
-    device.id.version = 0x0001;
-
-    device.absmin[ABS_X] = 0;
-    device.absmin[ABS_Y] = 0;
-    device.absmax[ABS_X] = 1023;
-    device.absmax[ABS_Y] = 1023;
-
-    device.absfuzz[ABS_X] = 4;
-    device.absfuzz[ABS_Y] = 4;
-    device.absflat[ABS_X] = 2;
-    device.absflat[ABS_Y] = 2;
-
-    //	mouse emulation
-    //
-    //	inform that we'll generate relative axis events
-    ioctl(fd, UI_SET_EVBIT, EV_REL);
-    //ioctl(fd, UI_SET_EVBIT, EV_SYN);
-    ioctl(fd, UI_SET_RELBIT, REL_X);
-    ioctl(fd, UI_SET_RELBIT, REL_Y);
-
-#if 0
-    ioctl(fd, UI_SET_EVBIT, EV_ABS);
-    ioctl(fd, UI_SET_ABSBIT, ABS_X);
-    ioctl(fd, UI_SET_ABSBIT, ABS_Y);
-#endif
-
-    //	inform that we'll generate key events
-    ioctl(fd, UI_SET_EVBIT, EV_KEY);
-
-    //	set key events we can generate (in this case, all)
-    for (i = 1; i < /*KEY_MAX */ 255; i++) {
-	ioctl(fd, UI_SET_KEYBIT, i);
-    }
-
-    ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
-    ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT);
-    ioctl(fd, UI_SET_KEYBIT, BTN_MIDDLE);
-
-    //	write down information for creating a new device
-    if (write(fd, &device, sizeof(struct uinput_user_dev)) < 0) {
-	perror("write");
-	close(fd);
-	return -1;
-    }
-    //	actually creates the device
-    if (ioctl(fd, UI_DEV_CREATE) < 0) {
-	perror("ioctl(UI_DEV_CREATE)");
-	close(fd);
-	return -1;
-    }
-
-    return fd;
-}
-
-///
-///	Send keydown event
-///
-int UInputKeydown(int fd, int code)
-{
-    struct input_event event;
-
-    memset(&event, 0, sizeof(event));
-
-    event.type = EV_KEY;
-    event.code = code;
-    event.value = 1;
-
-    return write(fd, &event, sizeof(event));
-}
-
-///
-///	Send keyup event
-///
-int UInputKeyup(int fd, int code)
-{
-    struct input_event event;
-
-    memset(&event, 0, sizeof(event));
-
-    event.type = EV_KEY;
-    event.code = code;
-    event.value = 0;
-
-    return write(fd, &event, sizeof(event));
-}
-
-///
-///	Close UInput
-///
-void CloseUInput(int fd)
-{
-    if (ioctl(fd, UI_DEV_DESTROY) < 0) {
-	perror("ioctl(UI_DEV_DESTROY)");
-    }
-}
-
-//----------------------------------------------------------------------------
 //	Highlevel
 //----------------------------------------------------------------------------
 
 ///
 ///	Show LED.
+///
+///	@param num	led integer number
+///	@param state	true turn led on, false turn led off
+///
+///	NUML, CAPS, SCROLL, ...
 ///
 void ShowLED(int num, int state)
 {
@@ -584,6 +462,7 @@ void ShowLED(int num, int state)
 
 ///
 ///	Input read
+///
 ///
 void InputRead(int did, int fd)
 {
@@ -735,7 +614,10 @@ static void ListSupportedDevices(void)
 ///
 ///	Main entry point.
 ///
-int main(int argc, char **argv)
+///	@param argc	Number of arguments
+///	@param argv	Arguments vector
+///
+int main(int argc, char *const *argv)
 {
     int i;
     int ufd;
@@ -868,7 +750,7 @@ int main(int argc, char **argv)
     //
     //	Open output device
     //
-    ufd = OpenUInput();
+    ufd = OpenUInput("ALE OneHand Keyboard");
     if (ufd >= 0) {
 	UInputFd = ufd;
 	if (!background && !SysLog) {

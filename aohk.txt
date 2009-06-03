@@ -317,7 +317,7 @@ Mapping of characters to sequence, sorted by type
     SPACE        54    RETURN        21
     BACKSPACE    87    TABULATOR     56
     ESCAPE       89    DELETE        5#
-    ENTER        054   INSERT        0#
+    ENTER        021   INSERT        0#
     HOME         7#    END           1#
     CURSOR-UP    8#    CURSOR-RIGHT  6#
     CURSOR-DOWN  2#    CURSOR-LEFT   4#
