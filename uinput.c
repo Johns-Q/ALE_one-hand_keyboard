@@ -90,11 +90,16 @@ int OpenUInput(const char *name)
     ioctl(fd, UI_SET_RELBIT, REL_X);
     ioctl(fd, UI_SET_RELBIT, REL_Y);
 
-#if 0
+#if 1
+    //	joystick/touchpad emulation
+    //
     //	inform that we'll generate absolute axis events
     ioctl(fd, UI_SET_EVBIT, EV_ABS);
     ioctl(fd, UI_SET_ABSBIT, ABS_X);
     ioctl(fd, UI_SET_ABSBIT, ABS_Y);
+    //ioctl(fd, UI_SET_ABSBIT, ABS_PRESSURE);
+
+    ioctl(fd, UI_SET_KEYBIT, BTN_TOUCH);
 #endif
 
     //	inform that we'll generate key events
