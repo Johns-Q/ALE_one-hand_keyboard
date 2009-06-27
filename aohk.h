@@ -56,11 +56,17 @@ enum __aohk_internal_keys__
     AOHK_KEY_NOP,			///< internal key: no function
 };
 
-extern int Timeout;			///< out: timeout used
-extern int Exit;			///< out: exit
+extern int AOHKTimeout;			///< out: timeout in ms needed
+extern int AOHKExit;			///< out: exit flag
 
-extern void KeyOut(int, int);		///< out: key code, press
-extern void ShowLED(int, int);		///< out: show led
+extern void AOHKKeyOut(int, int);	///< out: key code, press
+extern void AOHKShowLED(int, int);	///< out: show led
+
+    /// Check current state
+extern int AOHKCheckOffState(void);
+
+    /// Handle internal key symbol
+extern int AOHKFeedSymbol(unsigned long, int, int);
 
     /// Handle key
 extern void AOHKFeedKey(unsigned long, int, int);
