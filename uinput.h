@@ -1,7 +1,7 @@
 ///
 ///	@file uinput.h	@brief	linux uinput modul header file
 ///
-///	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+///	Copyright (c) 2007,2009 by Lutz Sammer.	 All Rights Reserved.
 ///
 ///	Contributor(s):
 ///

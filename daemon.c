@@ -1,7 +1,7 @@
 ///
-///	@file daemon.c	@brief	Keyboard handler daemon.
+///	@file daemon.c	@brief	ALE one-hand keyboard handler daemon.
 ///
-///	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+///	Copyright (c) 2007,2009 by Lutz Sammer.	 All Rights Reserved.
 ///
 ///	Contributor(s):
 ///
@@ -24,6 +24,14 @@
 ///
 ///	Uses aohk module to filter input devices.
 ///
+///	@see aohkd.1 howto use the keyboard daemon.
+///
+///	@todo
+///		- touchpad driver
+///		- passthrough of touchpad driver
+///		- usb devices which only support report(s) drivers
+///		- builtin bluetooth virtual keyboard emulation
+/// @{
 
 #include <linux/input.h>
 #include <linux/uinput.h>
@@ -43,34 +51,37 @@
 #include "aohk.h"
 #include "uinput.h"
 
-#define SYSTEM_VENDOR_ID	0x0001	///< System vendor
-#define PS2_KEYBOARD_ID		0x0001	///< System keyboard
+////////////////////////////////////////////////////////////////////////////
 
-#define BELKIN_VENDOR_ID	0x050D	///< Belkin's vendor ID
+#define SYSTEM_VENDOR_ID	0x0001	///< system vendor
+#define PS2_KEYBOARD_ID		0x0001	///< system keyboard
+
+#define BELKIN_VENDOR_ID	0x050D	///< belkin's vendor ID
 #define NOSTROMO_N52_ID		0x0815	///< nostromo n52 USB ID
 
-#define CHERRY_VENDOR_ID	0x046A	///< Cherry's vendor ID
-#define KEYPAD_ID		0x0014	///< Keypad G84-4700 USB ID
+#define CHERRY_VENDOR_ID	0x046A	///< cherry's vendor ID
+#define KEYPAD_ID		0x0014	///< keypad G84-4700 USB ID
 
-#define FUJSI_VENDOR_ID		0x0BF8	///< Fujitsu Siemens vendor ID
-#define KEYPAD2_ID		0x1004	///< Keypad USB ID
+#define FUJSI_VENDOR_ID		0x0BF8	///< fujitsu siemens vendor ID
+#define KEYPAD2_ID		0x1004	///< keypad USB ID
 
-#define SAITEK_VENDOR_ID	0x06A3	///< Saitek's vendor ID
-#define PGCU_ID			0x80C0	///< Pro Gamer Command Unit USB ID
+#define SAITEK_VENDOR_ID	0x06A3	///< saitek's vendor ID
+#define PGCU_ID			0x80C0	///< pro gamer command unit USB ID
 
-#define APPLE_VENDOR_ID		0x05AC	///< Apple vendor ID
-#define AWKB_ID			0x0209	///< Wireless keyboard BT ID
-#define AAKB_ID			0x021E	///< Alu keyboard USB ID
-#define AAWKB_ID		0x022D	///< Alu Wireless keyboard BT ID
+#define APPLE_VENDOR_ID		0x05AC	///< apple vendor ID
+#define AWKB_ID			0x0209	///< wireless keyboard BT ID
+#define AAKB_ID			0x021E	///< alu keyboard USB ID
+#define AAWKB_ID		0x022D	///< alu Wireless keyboard BT ID
 
-#define	LOGITECH_VENDOR_ID	0x046D	///< Logitech vendoor ID
+#define	LOGITECH_VENDOR_ID	0x046D	///< logitech vendoor ID
 #define G13_ID			0xC21C	///< G13 USB keyboard ID
 
 ///
-///	Mapping from keys to internal key for nostromo N52
+///	Mapping from keys to internal key for nostromo N52.
+///
 ///	End marked with KEY_RESERVED
 ///
-static int N52ConvertTable[] = {
+static const int N52ConvertTable[] = {
     KEY_SPACE, AOHK_KEY_0,
     KEY_Z, AOHK_KEY_1,
     KEY_X, AOHK_KEY_2,
@@ -99,10 +110,11 @@ static int N52ConvertTable[] = {
 
 ///
 ///	Mapping from keys to internal key for normal keyboard.
-///	typing on the left side of keyboard with left hand.
+///	Typing on the left side of keyboard with left hand.
+///
 ///	End marked with KEY_RESERVED
 ///
-static int PC102ConvertTable[] = {
+static const int PC102ConvertTable[] = {
     KEY_SPACE, AOHK_KEY_0,
     KEY_Z, AOHK_KEY_1,
     KEY_X, AOHK_KEY_2,
@@ -135,10 +147,11 @@ static int PC102ConvertTable[] = {
 
 ///
 ///	Mapping from keys to internal key for normal keyboard.
-///	typing with a number/key pad.
+///	Typing with a number/key pad.
+///
 ///	End marked with KEY_RESERVED
 ///
-static int NumpadConvertTable[] = {
+static const int NumpadConvertTable[] = {
     KEY_KPENTER, AOHK_KEY_0,
     KEY_KP1, AOHK_KEY_1,
     KEY_KP2, AOHK_KEY_2,
@@ -171,10 +184,11 @@ static int NumpadConvertTable[] = {
 
 ///
 ///	Mapping from keys to internal key for normal keyboard.
-///	typing with a number/key pad.
+///	Typing with a number/key pad.
+///
 ///	End marked with KEY_RESERVED
 ///
-static int Numpad2ConvertTable[] = {
+static const int Numpad2ConvertTable[] = {
     KEY_KPENTER, AOHK_KEY_0,
     KEY_KP1, AOHK_KEY_1,
     KEY_KP2, AOHK_KEY_2,
@@ -200,11 +214,12 @@ static int Numpad2ConvertTable[] = {
     KEY_RESERVED, KEY_RESERVED
 };
 
-//
-//	Mapping from keys to internal key for Pro Gamer Command Unit
-//	End marked with KEY_RESERVED
-//
-static int PgcuConvertTable[] = {
+///
+///	Mapping from keys to internal key for Pro Gamer Command Unit.
+///
+///	End marked with KEY_RESERVED
+///
+static const int PgcuConvertTable[] = {
     16, AOHK_KEY_0,
     9, AOHK_KEY_1,
     10, AOHK_KEY_2,
@@ -237,48 +252,55 @@ static int PgcuConvertTable[] = {
 };
 
 ///
-///	Table of supported input devices
+///	Input devices structure.
+///	Contains pre-defined features for special products.
 ///
 struct input_device
 {
     const char *ID;			///< name to select this device
     int Vendor;				///< usb/bluetooth vendor id
     int Product;			///< usb/bluetooth product id
-    int *ConvertTable;			///< default input convert table
+    const int *ConvertTable;		///< default input convert table
     int Offset;				///< to convert buttons of joysticks
-} InputDevices[] = {
+};
+
+///
+///	Table of supported input devices.
+///
+static const struct input_device InputDevices[] = {
     {
-    "n52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable, 0}, {
-    "pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable, 0}, {
-    "keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable, 0}, {
-    "keypad", FUJSI_VENDOR_ID, KEYPAD2_ID, Numpad2ConvertTable, 0}, {
-    "pgcu", SAITEK_VENDOR_ID, PGCU_ID, PgcuConvertTable, 0x11F}, {
-    "awkb", APPLE_VENDOR_ID, AWKB_ID, PC102ConvertTable, 0}, {
-    "aawkb", APPLE_VENDOR_ID, AAWKB_ID, PC102ConvertTable, 0}, {
-    "aakb", APPLE_VENDOR_ID, AAKB_ID, PC102ConvertTable, 0}, {
-    "g13", LOGITECH_VENDOR_ID, G13_ID, PC102ConvertTable, 0}, {
-    NULL, 0, 0, NULL, 0}
+	"n52", BELKIN_VENDOR_ID, NOSTROMO_N52_ID, N52ConvertTable, 0}, {
+	"pc102", SYSTEM_VENDOR_ID, PS2_KEYBOARD_ID, PC102ConvertTable, 0}, {
+	"keypad", CHERRY_VENDOR_ID, KEYPAD_ID, NumpadConvertTable, 0}, {
+	"keypad", FUJSI_VENDOR_ID, KEYPAD2_ID, Numpad2ConvertTable, 0}, {
+	"pgcu", SAITEK_VENDOR_ID, PGCU_ID, PgcuConvertTable, 0x11F}, {
+	"awkb", APPLE_VENDOR_ID, AWKB_ID, PC102ConvertTable, 0}, {
+	"aawkb", APPLE_VENDOR_ID, AAWKB_ID, PC102ConvertTable, 0}, {
+	"aakb", APPLE_VENDOR_ID, AAKB_ID, PC102ConvertTable, 0}, {
+	"g13", LOGITECH_VENDOR_ID, G13_ID, PC102ConvertTable, 0}, {
+	NULL, 0, 0, NULL, 0}
 };
 
 #define MAX_INPUTS	32		///< max input devices supported
-int InputFds[MAX_INPUTS];		///< Inputs
-int InputDid[MAX_INPUTS];		///< Input device ID
-int InputLEDs[MAX_INPUTS];		///< Inputs LED support
-int InputFdsN;				///< Number of Inputs
+int InputFds[MAX_INPUTS];		///< inputs
+int InputDid[MAX_INPUTS];		///< input device ID
+int InputLEDs[MAX_INPUTS];		///< inputs LED support
+int InputFdsN;				///< number of Inputs
 
-int UInputFd;				///< Output
+int UInputFd;				///< output uinput file descriptor
 
-int Timeout = 1000;			///< in: timeout used
-int Exit;				///< in: exit program flag
+int AOHKTimeout = 1000;			///< in: timeout used
+int AOHKExit;				///< in: exit program flag
 
-const char *UseDev;			///< Wanted device
-int UseVendor;				///< Wanted vendor
-int UseProduct;				///< Wanted product
-int ListDevices;			///< Show possible devices
-int NoConvertTable;			///< Don't load device convert table
-int NoLed;				///< Don't use Leds
+const char *UseDev;			///< wanted device name
+int UseEvent = -1;			///< wanted event device number
+int UseVendor = -1;			///< wanted vendor id
+int UseProduct = -1;			///< wanted product id
+int ListDevices;			///< show possible devices
+int NoConvertTable;			///< don't load device convert table
+int NoLed;				///< don't use Leds
 
-int DebugLevel = 2;			///< Debug level
+int DebugLevel = 2;			///< debug level
 int SysLog;				///< logging to syslog
 
 //----------------------------------------------------------------------------
@@ -288,11 +310,20 @@ int SysLog;				///< logging to syslog
 ///
 ///	Debug output function.
 ///
+///	@param level	debug level (0: errors, 1: warnings, 2: infos: 3: ...)
+///	@param fmt	printf like format string
+///	@param ...	printf like arguments
+///
 #define Debug(level, fmt...) \
     do { if (level<DebugLevel) { printf(fmt); } } while (0)
-
+///
+///	Prepare debuging/logging.
+///
 #define InitDebug() \
     do { if (SysLog) { openlog("aohk-daemon", 0, 0); } } while (0)
+///
+///	Cleanup debuging/logging.
+///
 #define ExitDebug()
 
 //----------------------------------------------------------------------------
@@ -302,13 +333,13 @@ int SysLog;				///< logging to syslog
 ///
 ///	Check if device supports LEDs.
 ///
-///	@param fd	File descriptor of input device
+///	@param fd	file descriptor of input device
 ///
 ///	@returns True if device supports setting leds.
 ///
-///	@note if #NoLeds is set, this function returns always false.
+///	@note if #NoLed is set, this function returns always false.
 ///
-int EventCheckLEDs(int fd)
+static int EventCheckLEDs(int fd)
 {
     unsigned char led_bitmask[LED_MAX / 8 + 1] = { 0 };
 
@@ -325,9 +356,12 @@ int EventCheckLEDs(int fd)
 ///
 ///	Open input event device.
 ///
-int OpenEvent(void)
+///	@returns number of opened of input devices, 0 on failure
+///
+static int OpenEvent(void)
 {
     char dev[32];
+    char name[64];
     char *s;
     int i;
     int j;
@@ -349,14 +383,19 @@ int OpenEvent(void)
 	if ((fd = open(dev, O_RDWR)) >= 0) {
 	    // Open ok
 	    // printf("Open success\n");
-	    if (ioctl(fd, EVIOCGID, &info) == 0) {
+	    if (!ioctl(fd, EVIOCGID, &info)) {
 		if (ListDevices) {
+		    // get device name if possible
+		    if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) < 0) {
+			*name = '\0';
+		    }
 		    Debug(1,
-			"Bus: %04X Vendor: %04X Product: %04X "
-			"Version: %04X\n", info.bustype, info.vendor,
-			info.product, info.version);
+			"Bus:%04X Vendor:%04X Product:%04X "
+			"Version:%04X %s\n", info.bustype, info.vendor,
+			info.product, info.version, name);
 		}
-		if (UseVendor == info.vendor && UseProduct == info.product) {
+		if (UseEvent == i || (UseVendor == info.vendor
+			&& UseProduct == info.product)) {
 		    Debug(1,
 			"Device(%d) found BUS: %04X Vendor: %04X Product: "
 			"%04X Version: %04X\n", fd, info.bustype, info.vendor,
@@ -396,8 +435,8 @@ int OpenEvent(void)
 			    InputFds[InputFdsN++] = fd;
 			}
 			if (!NoConvertTable) {
-			    AOHKSetupConvertTable(InputDevices[j].
-				ConvertTable);
+			    AOHKSetupConvertTable(InputDevices
+				[j].ConvertTable);
 			}
 			goto found;
 		    }
@@ -414,16 +453,21 @@ int OpenEvent(void)
 
     if (!InputFdsN) {
 	Debug(0, "No useable device found.\n");
-	return 1;
     }
 
-    return 0;
+    return InputFdsN;
 }
 
 ///
 ///	Turn LED on/off.
 ///
-void EventLEDs(int fd, int num, int state)
+///	@param fd	file descriptor of input device
+///	@param num	led integer number
+///	@param state	true turn led on, false turn led off
+///
+///	@see LED_NUML, LED_CAPSL, LED_SCROLLL, ... in /usr/include/linux/input.h
+///
+static void EventLEDs(int fd, int num, int state)
 {
     struct input_event ev;
 
@@ -439,15 +483,38 @@ void EventLEDs(int fd, int num, int state)
 //	Highlevel
 //----------------------------------------------------------------------------
 
+static int TouchFd = -1;		///< touchpad file descriptor
+static int TouchX;			///< x of touchpad
+static int TouchY;			///< y of touchpad
+static int TouchP;			///< pressure of touchpad
+static int TouchR;			///< tool width of touchpad
+static int TouchB;			///< touch button
+
+static int TouchXI;			///< invert x of touchpad
+static int TouchX0 = 1350;		///< x0 of touchpad
+static int TouchXC = 1350 + 140;	///< x corner of touchpad
+static int TouchX1 = 1350 + 1415;	///< x1 of touchpad
+static int TouchX2 = 1350 + 2830;	///< x2 of touchpad
+static int TouchX3 = 5595;		///< x3 of touchpad
+
+static int TouchYI;			///< invert y of touchpad
+static int TouchY0 = 1200;		///< y0 of touchpad
+static int TouchYC = 1200 + 400;	///< y corner of touchpad
+static int TouchY1 = 1200 + 1167 - 100;	///< y1 of touchpad
+static int TouchY2 = 1200 + 2333 + 100;	///< y2 of touchpad
+static int TouchY3 = 4750;		///< y3 of touchpad
+
+static int TouchLastSector;		///< last pressed sector
+
 ///
 ///	Show LED.
 ///
 ///	@param num	led integer number
 ///	@param state	true turn led on, false turn led off
 ///
-///	NUML, CAPS, SCROLL, ...
+///	@see LED_NUML, LED_CAPSL, LED_SCROLLL, ... in /usr/include/linux/input.h
 ///
-void ShowLED(int num, int state)
+void AOHKShowLED(int num, int state)
 {
     int i;
 
@@ -461,10 +528,198 @@ void ShowLED(int num, int state)
 }
 
 ///
-///	Input read
+///	Input handle touchpad/touchscreen devices.
 ///
+///	@param did	internal device id (#InputDevices) of input
+///	@param fd	file descriptor of input device
+///	@param ev	input event
 ///
-void InputRead(int did, int fd)
+///	@todo only debug
+///
+static void InputTouch(int did, int fd, const struct input_event *ev)
+{
+    int i;
+    int sector;
+    int timestamp;
+
+    static int sector_codes[13] = { AOHK_KEY_0,
+	AOHK_KEY_1, AOHK_KEY_2, AOHK_KEY_3,
+	AOHK_KEY_4, AOHK_KEY_5, AOHK_KEY_6,
+	AOHK_KEY_7, AOHK_KEY_8, AOHK_KEY_9,
+	AOHK_KEY_HASH, AOHK_KEY_SPECIAL, AOHK_KEY_STAR
+    };
+
+    did = did;
+
+    if (TouchFd == -1) {		// touchpad autodection
+	if (ev->code == BTN_TOUCH || ev->code == ABS_PRESSURE
+	    || ev->code == ABS_TOOL_WIDTH) {
+	    Debug(5, "touch device auto detected\n");
+	    TouchFd = fd;
+	} else {
+	    return;
+	}
+    } else if (fd != TouchFd) {
+	return;
+    }
+
+    if (AOHKCheckOffState()) {		// turned off
+	if (write(UInputFd, ev, sizeof(*ev)) != sizeof(*ev)) {
+	    perror("write");
+	}
+	// FIXME: can't turn touchpad on again!
+	return;
+    }
+
+    timestamp = ev->time.tv_sec * 1000 + ev->time.tv_usec / 1000;
+
+    if (ev->type == EV_SYN) {
+	//	Ignore out of range events
+	if (TouchX0 > TouchX || TouchX > TouchX3 || TouchY0 > TouchY
+	    || TouchY > TouchY3) {
+	    Debug(3, "out of range\n");
+	    return;
+	}
+	//
+	//	Unhandled button event
+	//
+	if (TouchB) {
+	    //	Convert to sector
+	    i = TouchX;
+	    if (i < TouchX0 || i > TouchX3) {
+		if (TouchB < 0) {
+		    if (TouchLastSector) {
+			AOHKFeedSymbol(timestamp,
+			    sector_codes[TouchLastSector], 0);
+		    }
+		    Debug(1, "x out of range\n");
+		    TouchB = 0;
+		}
+		return;
+	    }
+	    if (i < TouchX2) {
+		if (i < TouchX1) {
+		    sector = 1;
+		} else {
+		    sector = 2;
+		}
+	    } else {
+		sector = 3;
+	    }
+	    if (TouchXI) {
+		sector = 3 - sector;
+	    }
+	    i = TouchY;
+	    if (i < TouchY0 || i > TouchY3) {
+		if (TouchB < 0) {
+		    if (TouchLastSector) {
+			AOHKFeedSymbol(timestamp,
+			    sector_codes[TouchLastSector], 0);
+		    }
+		    Debug(1, "y out of range\n");
+		    TouchB = 0;
+		}
+		return;
+	    }
+	    if (i < TouchY2) {
+		if (i < TouchY1) {
+		    sector += TouchYI ? 0 : 6;
+		} else {
+		    sector += 3;
+		}
+	    } else {
+		sector += TouchYI ? 6 : 0;
+	    }
+	    TouchB++;			// to release code
+	    if (sector == 7 && TouchX < TouchXC && TouchY < TouchYC) {
+		Debug(3, "Corner %d %s\n", sector,
+		    TouchB ? "press" : "release");
+		sector = 11;
+	    }
+	    Debug(3, "Sector %d %s\n", sector, TouchB ? "press" : "release");
+	    // release not the same sector release the old sector
+	    if (TouchLastSector && TouchLastSector != sector) {
+		// release old sector, press new sector
+		AOHKFeedSymbol(timestamp, sector_codes[TouchLastSector], 0);
+		if (!TouchB) {		// release in new sector
+		    AOHKFeedSymbol(timestamp, sector_codes[sector], 1);
+		}
+	    }
+	    AOHKFeedSymbol(timestamp, sector_codes[sector], TouchB);
+	    if (TouchB) {		// remember to release
+		TouchLastSector = sector;
+	    } else {
+		TouchLastSector = 0;
+	    }
+	    TouchB = 0;
+	} else {
+	    Debug(1, "%d x:%d,y:%d,p:%d,r:%d\n", TouchB, TouchX, TouchY,
+		TouchP, TouchR);
+	}
+	return;
+    }
+    if (ev->type == EV_KEY) {
+	if (ev->code == BTN_LEFT) {
+	    Debug(1, "0 %s\n", ev->value ? "pressed" : "released");
+	    AOHKFeedSymbol(timestamp, sector_codes[0], ev->value);
+	    return;
+	}
+	if (ev->code == BTN_RIGHT) {
+	    Debug(1, "# %s\n", ev->value ? "pressed" : "released");
+	    AOHKFeedSymbol(timestamp, sector_codes[10], ev->value);
+	    return;
+	}
+	if (ev->code == BTN_MIDDLE) {
+	    Debug(1, "* %s\n", ev->value ? "pressed" : "released");
+	    AOHKFeedSymbol(timestamp, sector_codes[12], ev->value);
+	    return;
+	}
+	if (ev->code != BTN_TOUCH) {
+	    return;
+	}
+	TouchB = ev->value ? 1 : -1;
+
+	return;
+    }
+
+    switch (ev->code) {
+	case ABS_X:
+	    TouchX = ev->value;
+	    break;
+	case ABS_Y:
+	    TouchY = ev->value;
+	    break;
+	case ABS_PRESSURE:
+	    if (0) {
+		if (TouchP && !ev->value) {
+		    TouchB = -1;
+		} else if (!TouchP && ev->value) {
+		    TouchB = 1;
+		}
+		Debug(1, "pressure %d %d\n", TouchP, TouchB);
+	    }
+	    TouchP = ev->value;
+	    break;
+	case ABS_TOOL_WIDTH:
+	    TouchR = ev->value;
+	    break;
+	default:
+	    Debug(1, "unsupported event code $%02x\n", ev->code);
+	    break;
+    }
+    Debug(9, "M x:%d,y:%d,p:%d,r:%d\n", TouchX, TouchY, TouchP, TouchR);
+}
+
+///
+///	Input read.
+///	Read input from events, emulate aohk, output to uinput.
+///
+///	@param did	internal device id (#InputDevices) of input
+///	@param fd	file descriptor of input device
+///
+///	@see InputDevices
+///
+static void InputRead(int did, int fd)
 {
     struct input_event ev;
 
@@ -474,8 +729,12 @@ void InputRead(int did, int fd)
     }
     switch (ev.type) {
 	case EV_KEY:			// Key event
-	    //printf("Key 0x%02X=%d %s\n", ev.code, ev.code,
-	    //	ev.value ? "pressed" : "released");
+	    if (ev.code >= BTN_MISC) {
+		Debug(4, "Key 0x%02X=%d %s\n", ev.code, ev.code,
+		    ev.value ? "pressed" : "released");
+		InputTouch(did, fd, &ev);
+		break;
+	    }
 	    // FIXME: 0x100 - 0x200
 	    // Feed into AOHK Statemachine
 	    AOHKFeedKey(ev.time.tv_sec * 1000 + ev.time.tv_usec / 1000,
@@ -487,18 +746,19 @@ void InputRead(int did, int fd)
 	    break;
 
 	case EV_MSC:			// Send by system keyboard
+	    // Ignore
+	    Debug(5, "msc for %d\n", fd);
+	    break;
 	case EV_SYN:			// Synchronization events
 	    // Ignore
+	    Debug(5, "syn for %d\n", fd);
+	    InputTouch(did, fd, &ev);
 	    break;
 	case EV_ABS:			// ABS event parse on.
-	    Debug(1, "Event Type(%d,%d,%d) abs\n", ev.type, ev.code, ev.value);
-#if 0
-	    ev.type = EV_REL;
-	    ev.code -= 512;
-	    if (write(UInputFd, &ev, sizeof(ev)) != sizeof(ev)) {
-		perror("write");
-	    }
-#endif
+	    // ev.code: ABS_X, ABS_Y, ABS_PRESSURE, ABS_TOOLWIDTH
+	    Debug(6, "Event Type(%d,$%02x,%d) abs\n", ev.type, ev.code,
+		ev.value);
+	    InputTouch(did, fd, &ev);
 	    break;
 
 	default:
@@ -526,14 +786,15 @@ void EventLoop(void)
 	fds[i].revents = 0;
     }
 
-    while (!Exit) {
-	ret = poll(fds, InputFdsN, Timeout ? Timeout : -1);
+    while (!AOHKExit) {
+	ret = poll(fds, InputFdsN, AOHKTimeout ? AOHKTimeout : -1);
 	if (ret < 0) {			// -1 error
 	    perror("poll()");
 	    continue;
 	}
 	if (!ret) {
-	    AOHKFeedTimeout(Timeout);
+	    // FIXME: not correct. this can be longer
+	    AOHKFeedTimeout(AOHKTimeout);
 	    continue;
 	}
 	for (i = 0; i < InputFdsN; ++i) {
@@ -546,29 +807,26 @@ void EventLoop(void)
 }
 
 ///
-///	Key out
+///	@details Key out, called from aohk module to output final scancodes.
 ///
-void KeyOut(int key, int pressed)
+///	@param key	linux scan code for key (/usr/include/linux/input.h)
+///	@param pressed	true key is pressed, false released.
+///
+void AOHKKeyOut(int key, int pressed)
 {
-    struct input_event event;
-
-    memset(&event, 0, sizeof(event));
-
-    event.type = EV_KEY;
-    event.code = key;
-    event.value = pressed;
-
-    if (write(UInputFd, &event, sizeof(event)) != sizeof(event)) {
-	perror("write");
+    if (pressed) {
+	UInputKeydown(UInputFd, key);
+    } else {
+	UInputKeyup(UInputFd, key);
     }
 }
 
 ///
 ///	Show firework. No time lost, need some delay to release start keys.
 ///
-void Firework(void)
+static void Firework(void)
 {
-    static char led_firework[][3] = {
+    static const int8_t led_firework[][3] = {
 	{0, 0, 0},
 	{1, 0, 0},
 	{0, 1, 0},
@@ -587,11 +845,105 @@ void Firework(void)
     int i;
 
     for (i = 0; led_firework[i][0] >= 0; ++i) {
-	ShowLED(0, led_firework[i][0]);
-	ShowLED(1, led_firework[i][1]);
-	ShowLED(2, led_firework[i][2]);
+	AOHKShowLED(0, led_firework[i][0]);
+	AOHKShowLED(1, led_firework[i][1]);
+	AOHKShowLED(2, led_firework[i][2]);
 	usleep(100000);
     }
+}
+
+///
+///	Parse geometry.
+///	Parses strings of the form
+///	"=<width>x<height>{+-}<xoffset>{+-}<yoffset>", where
+///	width, height, xoffset, and yoffset are unsigned integers.
+///
+///	@param string		geometry (f.e. 5000x5000+1300+1300)
+///	@param[out] x		pointer for x offset result
+///	@param[out] y		pointer for y offset result
+///	@param[out] width	pointer for width result
+///	@param[out] height	pointer for height result
+///
+///	@returns 0 on parse errrors, otherwise bitmask of results.
+///
+static int ParseGeometry(const char *string, int *x, int *y, unsigned *width,
+    unsigned *height)
+{
+    int mask;
+    char *endptr;
+    int tx;
+    int ty;
+    unsigned tw;
+    unsigned th;
+
+    mask = 0;
+    if (!string || !*string) {		// empty or null string
+	return mask;
+    }
+    if (*string == '=') {		// ignore leading '='
+	++string;
+    }
+    if (*string != '+' && *string != '-' && (*string | 0x20) != 'x') {
+	tw = strtol(string, &endptr, 10);
+	if (string == endptr) {		// parse failure
+	    return 0;
+	}
+	string = endptr;
+	mask |= 4;
+    }
+    if ((*string | 0x20) == 'x') {
+	th = strtol(++string, &endptr, 10);
+	if (string == endptr) {		// parse failure
+	    return 0;
+	}
+	string = endptr;
+	mask |= 8;
+    }
+    if (*string == '+' || *string == '-') {
+	if (*string == '-') {
+	    mask |= 16;
+	}
+	tx = strtol(++string, &endptr, 10);
+	if (mask & 16) {
+	    tx = -tx;
+	}
+	if (string == endptr) {		// parse failure
+	    return 0;
+	}
+	string = endptr;
+	mask |= 1;
+	if (*string == '+' || *string == '-') {
+	    if (*string == '-') {
+		mask |= 32;
+	    }
+	    ty = strtol(++string, &endptr, 10);
+	    if (mask & 32) {
+		ty = -ty;
+	    }
+	    if (string == endptr) {	// parse failure
+		return 0;
+	    }
+	    string = endptr;
+	    mask |= 2;
+	}
+    }
+
+    if (*string) {			// still some characters left invalid geometry
+	return 0;
+    }
+    if (mask & 1) {			// everything ok, give results back
+	*x = tx;
+    }
+    if (mask & 2) {
+	*y = ty;
+    }
+    if (mask & 3) {
+	*width = tw;
+    }
+    if (mask & 4) {
+	*height = th;
+    }
+    return mask;
 }
 
 ///
@@ -609,13 +961,17 @@ static void ListSupportedDevices(void)
     }
 }
 
-#define VERSION	"ALE one-hand keyboard daemon Version 0.06"
+    /// Title shown for errors, usage.
+#define TITLE	"ALE one-hand keyboard daemon Version " VERSION \
+	" (c) 2007,2009 Lutz Sammer"
 
 ///
 ///	Main entry point.
 ///
 ///	@param argc	Number of arguments
 ///	@param argv	Arguments vector
+///
+///	@returns -1 on failures
 ///
 int main(int argc, char *const *argv)
 {
@@ -637,9 +993,7 @@ int main(int argc, char *const *argv)
     //		...
     //
     for (;;) {
-	switch (getopt(argc, argv, "DLQ:bd:l:np:s:v:h?")) {
-	    case EOF:
-		break;
+	switch (getopt(argc, argv, "DLQ:bd:e:g:l:np:s:v:h?-")) {
 	    case 'b':			// background
 		background = 1;
 		SysLog = 1;
@@ -647,12 +1001,47 @@ int main(int argc, char *const *argv)
 	    case 'd':			// device
 		UseDev = optarg;
 		continue;
+	    case 'e':			// event device
+		UseEvent = strtol(optarg, NULL, 0);
+		continue;
+	    case 'g':			// geometry
+	    {
+		int m;
+		int x;
+		int y;
+		unsigned w;
+		unsigned h;
+
+		m = ParseGeometry(optarg, &x, &y, &w, &h);
+		printf("%x = %dx%d%+d%+d\n", m, w, h, x, y);
+
+		if (m & 16) {
+		    TouchXI = 1;	// negative invert
+		    x = -x;
+		}
+		TouchX0 = x;
+		TouchXC = x + 140;
+		TouchX1 = x + (w / 3);
+		TouchX2 = x + 2 * (w / 3);
+		TouchX3 = x + w;
+		if (m & 32) {
+		    TouchYI = 1;	// negative invert
+		    y = -y;
+		}
+		TouchY0 = y;
+		TouchYC = y + 400;
+		TouchY1 = y + (h / 3);
+		TouchY2 = y + 2 * (h / 3);
+		TouchY3 = y + h;
+
+	    }
+		continue;
 	    case 'l':			// language
 		if (strlen(optarg) != 2) {
 		    fprintf(stderr,
 			"%s\nUse 2 character language codes. FE. 'de', 'us'\n",
-			VERSION);
-		    exit(-1);
+			TITLE);
+		    return -1;
 		}
 		lang = optarg;
 		continue;
@@ -680,6 +1069,11 @@ int main(int argc, char *const *argv)
 		ListDevices = 1;
 		continue;;
 
+	    case EOF:
+		break;
+	    case '-':			// stupid long opts
+		fprintf(stderr, "long options not needed\n");
+		// fall through
 	    case '?':
 	    case 'h':			// help usage
 		printf("%s\nUsage: %s [OPTIONs]... [FILEs]...\t"
@@ -690,22 +1084,24 @@ int main(int argc, char *const *argv)
 		    "-L\tList all available input devices\n"
 		    "-D\tIncrease debug level\n"
 		    "-d dev\tUse only this input device\n"
+		    "-e n\tAlso use this /dev/input/eventN device\n"
 		    "-v id\tAlso use the input device with vendor id\n"
 		    "-p id\tAlso use the input device with product id\n"
+		    "-g geo\tGeometry of the touch device <width>x<height>{+-}<xoffset>{+-}<yoffset\n"
 		    "-n\tNo leds, some control goes wired with leds\n"
 		    "-l lang\tUse internal language table (de,us)\n"
 		    "-s file\tSave internal tables\nSupported input devices: ",
-		    VERSION, argv[0], argv[0]);
+		    TITLE, argv[0], argv[0]);
 		ListSupportedDevices();
 		printf("\n");
-		exit(0);
+		return 0;
 	    case ':':
 		fprintf(stderr, "%s\nMissing argument for option '%c'\n",
-		    VERSION, optopt);
-		exit(-1);
+		    TITLE, optopt);
+		return -1;
 	    default:
-		fprintf(stderr, "%s\nUnkown option '%c'\n", VERSION, optopt);
-		exit(-1);
+		fprintf(stderr, "%s\nUnkown option '%c'\n", TITLE, optopt);
+		return -1;
 	}
 	break;
     }
@@ -716,12 +1112,12 @@ int main(int argc, char *const *argv)
     if (background) {
 	if (daemon(0, 0)) {
 	    perror(argv[0]);
-	    exit(-1);
+	    return -1;
 	}
     }
 
     InitDebug();
-    Debug(0, "%s\n", VERSION);
+    Debug(0, "%s\n", TITLE);
 
     //
     //	Load language defaults.
@@ -738,14 +1134,13 @@ int main(int argc, char *const *argv)
 
     if (save) {				// save resulting tables and exit
 	AOHKSaveTable(save);
-	exit(-1);
+	return -1;
     }
     //
     //	Open input devices
     //
-    sleep(1);				// sleep 1s for key release
-    if (OpenEvent()) {
-	exit(-1);
+    if (!OpenEvent()) {
+	return -1;
     }
     //
     //	Open output device
@@ -756,14 +1151,12 @@ int main(int argc, char *const *argv)
 	if (!background && !SysLog) {
 	    printf("Press SPECIAL 5 to exit\n");
 	}
+	//sleep(1);			// sleep 1s for key release
 	Firework();
 	EventLoop();
 
 	CloseUInput(ufd);
     }
-    // FIXME: Key relase got as event
-    sleep(1);				// sleep 1s for key release
-
     //
     //	Close input devices, cleanup
     //
@@ -775,3 +1168,5 @@ int main(int argc, char *const *argv)
 
     return 0;
 }
+
+/// @}

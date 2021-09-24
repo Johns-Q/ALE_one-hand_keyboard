@@ -1,7 +1,7 @@
 ///
 ///	@file aohk.c	@brief	ALE OneHand Keyboard handler.
 ///
-///	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+///	Copyright (c) 2007,2009 by Lutz Sammer.	 All Rights Reserved.
 ///
 ///	Contributor(s):
 ///
@@ -769,7 +769,7 @@ static void AOHKDoSequence(const OHKey * sequence)
 ///
 ///	@see __aohk_internal_keys__
 ///
-static int AOHKMapToInternal(int key, int __attribute__ ((unused)) down)
+static int AOHKMapToInternal(int key, int __attribute__((unused)) down)
 {
     if (key < 0 || (unsigned)key >= sizeof(AOHKConvertTable)) {
 	return -1;
@@ -1225,6 +1225,7 @@ static void AOHKSpecialMode(int key)
 	case AOHK_KEY_4:		// Version
 	    if (1) {
 		int i;
+
 		char version[] = {
 		    KEY_A, KEY_O, KEY_H, KEY_K, KEY_SPACE,
 		    KEY_V, KEY_0, KEY_DOT, KEY_9, KEY_0, KEY_RESERVED
@@ -2140,7 +2141,7 @@ static void AOHKParseConvert(char *line)
     l = s - line;
     key = AOHKString2Key(line, l);
     if (key == KEY_RESERVED) {		// Still not found giving up.
-	Debug(0, "Key '%.*s' not found\n", l, line);
+	Debug(0, "Key '%.*s' not found\n", (int)l, line);
 	return;
     }
     //
@@ -2174,7 +2175,7 @@ static void AOHKParseConvert(char *line)
     //
     internal = AOHKString2Internal(line, l);
     if (internal == -1) {
-	Debug(0, "Key '%.*s' not found\n", l, line);
+	Debug(0, "Key '%.*s' not found\n", (int)l, line);
 	return;
     }
 
@@ -2281,7 +2282,7 @@ static void AOHKParseOutput(int linenr, char *line, OHKey * out)
     } else if (l) {
 	i = AOHKString2Key(line, l);
 	if (i == KEY_RESERVED) {	// Still not found giving up.
-	    Debug(0, "Key '%.*s' not found\n", l, line);
+	    Debug(0, "Key '%.*s' not found\n", (int)l, line);
 	    return;
 	}
 	// Look if its a modifier

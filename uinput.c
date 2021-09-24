@@ -1,7 +1,7 @@
 ///
 ///	@file uinput.c	@brief	linux uinput modul
 ///
-///	Copyright (c) 2007,2009 by Lutz Sammer.  All Rights Reserved.
+///	Copyright (c) 2007,2009 by Lutz Sammer.	 All Rights Reserved.
 ///
 ///	Contributor(s):
 ///
@@ -55,7 +55,7 @@ int OpenUInput(const char *name)
     if ((fd = open("/dev/input/uinput", O_WRONLY)) < 0
 	&& (fd = open("/dev/misc/uinput", O_WRONLY)) < 0
 	&& (fd = open("/dev/uinput", O_WRONLY)) < 0) {
-	perror("open()");
+	perror("open(/dev/.../uinput)");
 	return fd;
     }
 
@@ -147,15 +147,17 @@ int OpenUInput(const char *name)
 ///
 int UInputKeydown(int fd, int code)
 {
-    struct input_event event;
+    struct input_event event[2];
 
     memset(&event, 0, sizeof(event));
 
-    event.type = EV_KEY;
-    event.code = code;
-    event.value = 1;
+    event[0].type = EV_KEY;
+    event[0].code = code;
+    event[0].value = 1;
+    event[1].type = EV_SYN;
+    event[1].code = SYN_REPORT;
 
-    return write(fd, &event, sizeof(event));
+    return write(fd, event, sizeof(event));
 }
 
 ///
@@ -170,15 +172,17 @@ int UInputKeydown(int fd, int code)
 ///
 int UInputKeyup(int fd, int code)
 {
-    struct input_event event;
+    struct input_event event[2];
 
     memset(&event, 0, sizeof(event));
 
-    event.type = EV_KEY;
-    event.code = code;
-    //event.value = 0;
+    event[0].type = EV_KEY;
+    event[0].code = code;
+    // event[0].value = 0;
+    event[1].type = EV_SYN;
+    event[1].code = SYN_REPORT;
 
-    return write(fd, &event, sizeof(event));
+    return write(fd, event, sizeof(event));
 }
 
 ///

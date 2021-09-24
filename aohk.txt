@@ -288,7 +288,7 @@ Mapping of characters to sequence, ASCII mini version:
 
  !"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\]^_{|}~ `дцья
 52394463556622290123456789883767846914397174337693147611447558296891891237
-49411717394776370123456789316334222884852266258521585863939825549664737891
+49411717394776370123456789316334222885852266258521585863939825549664737891
 
 SCAM
 HTLT
@@ -370,7 +370,7 @@ Notes:
 Special-Commands:
     QUOTE + REPEAT		Must be pressed together, is super quote.
     MACRO + REPEAT		Must be pressed together, enter game-mode.
-    MACRO , REPEAT		Enter game-mode.
+    MACRO, REPEAT		Enter game-mode.
     MACRO, MACRO		Enter number-mode.
     SPECIAL, QUOTE		Reset
     SPECIAL, SPECIAL 		Turn off (next SPECIAL re enables)

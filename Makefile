@@ -19,34 +19,58 @@
 ##	$Id$
 ############################################################################
 
-GIT_REV =       "`git describe --always 2>/dev/null`"
+VERSION = "0.90"
+GIT_REV	= "`git describe --always 2>/dev/null`"
 
-CC=	gcc
-#CFLAGS=	-g -pipe -W -Wall -W
-CFLAGS=	-g -Os -pipe -W -Wall -W
+CC	= gcc
+CFLAGS	= -g -O0 -pipe -W -Wall -W \
+	-DVERSION=\"$(VERSION)\" -DGIT_REV=\"$(GIT_REV)\"
 
-OBJS=	daemon.o aohk.o
-HDRS=	aohk.h
+OBJS	= daemon.o aohk.o uinput.o
+HDRS	= aohk.h uinput.h
 
-all:	aohkd
+all:	aohkd # btvhid xvaohk
 
-aohk.o daemon.o:	aohk.h
+$(OBJS):	$(HDRS) Makefile
 
-aohkd:	daemon.o aohk.o
-	$(CC) -o $@ $^
+aohkd:	$(OBJS)
+	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $^ $(LIBS)
+
+#----------------------------------------------------------------------------
+
+BTOBJS	= btvhid.o
+BTHDRS	= btvhid.h
+BTLIBS	= -lbluetooth
+
+$(BTOBJS):	$(BTHDRS) Makefile
+
+btvhid:	$(BTOBJS)
+	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $^ $(BTLIBS)
+
+#----------------------------------------------------------------------------
+
+XVOBJS	= xvaohk.o uinput.o aohk.o
+XVHDRS	= xvaohk.h uinput.h aohk.h
+XVLIBS	= `pkg-config --libs xcb-icccm xcb-shape xcb-image xcb`
+
+$(XVOBJS):	$(XVHDRS) Makefile xvaohk.xpm
+
+xvaohk:	$(XVOBJS)
+	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $^ $(XVLIBS)
 
 #----------------------------------------------------------------------------
 #	Developer tools
 
 indent:
-	for i in $(OBJS:.o=.c) $(HDRS); do \
+	for i in $(XVOBJS:.o=.c) $(BTOBJS:.o=.c) $(OBJS:.o=.c) $(HDRS); do \
 		indent $$i; unexpand -a $$i > $$i.up; mv $$i.up $$i; \
 	done
 clean:
 	-rm *.o *~
 
 clobber:	clean
-	rm aohkd
+	rm aohkd btvhid xvaohk
+
 
 #----------------------------------------------------------------------------
 
@@ -54,7 +78,7 @@ clobber:	clean
 
 doc:	$(SRCS) $(HDRS) aohkd.doxygen
 	(cat aohkd.doxygen;\
-	echo "PROJECT_NUMBER=0.06 (GIT-$(GIT_REV))") | doxygen -
+	echo "PROJECT_NUMBER=${VERSION} (GIT-$(GIT_REV))") | doxygen -
 
 DISTDIR=	aohk-`date +%y%m%d`
 FILES=	Makefile aohk-refcard.txt aohk.txt de.doc.txt doc.txt readme.txt \
